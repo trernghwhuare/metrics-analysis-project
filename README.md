@@ -1,45 +1,82 @@
 # Metrics Analysis Project
 
+A Python package for analyzing graph metrics in neural network structures.
+
 ## Overview
+
 The Metrics Analysis Project is designed to generate metric values and aligned arrays for statistical analysis. It provides a modular structure for metric generation, utility functions, and visualization of metric comparisons.
 
-## Project Structure
-```
-metrics_analysis_project
-├── src
-│   ├── metrics
-│   │   ├── __init__.py
-│   │   ├── generator.py         # Generates metric values and aligned arrays
-│   │   └── utils.py             # Helper functions for metrics and alignment
-│   ├── plotting
-│   │   ├── __init__.py
-│   │   └── compare_plots.py     # Plotting functions for metric comparison visualizations
-│   └── main.py                  # CLI / entrypoint to generate metrics and save arrays
-├── tests
-│   ├── test_generator.py        # Unit tests for metric generation
-│   └── test_plotting.py         # Unit tests for plotting functions
-├── requirements.txt             # Project dependencies
-├── pyproject.toml               # Project configuration
-├── .gitignore                   # Files to ignore in version control
-└── README.md                    # Project documentation
-```
+## Features
+
+- Compute multiple graph metrics (PageRank, Betweenness, Closeness, Eigenvector, Katz, HITS, etc.)
+- Generate statistical visualizations (violin plots, box plots, heatmaps, clustermaps)
+- Save metrics in multiple formats (NPZ, CSV)
+- Normalize metrics for easier comparison
 
 ## Installation
-To install the required dependencies, run the following command:
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
-To generate metrics and visualize comparisons, run the main script:
+
+### Command Line
+
+For computing metrics:
+```bash
+python src/metrics/main.py --graph path/to/graph.gt --out output_directory --prefix my_network
+```
+
+For plotting existing metrics:
+```bash
+python src/plotting/compare_plots.py
+```
+
+### As a Library
+
+```python
+import graph_tool.all as gt
+from src.metrics.generator import compute_and_save_metrics
+
+# Load your graph
+g = gt.load_graph("path/to/your/graph.gt")
+
+# Compute metrics
+metrics, npz_path, csv_path = compute_and_save_metrics(
+    g, 
+    out_dir="output", 
+    prefix="my_network",
+    normalize=True
+)
+```
+
+## Project Structure
 
 ```
-python src/main.py
+metrics_analysis_project/
+├── src/
+│   ├── metrics/
+│   │   ├── __init__.py
+│   │   ├── generator.py
+│   │   ├── main.py
+│   │   └── utils.py
+│   ├── plotting/
+│   │   ├── __init__.py
+│   │   └── compare_plots.py
+│   └── main.py
+├── tests/
+│   ├── test_generator.py
+│   └── test_plotting.py
+├── requirements.txt
+├── pyproject.toml
+└── README.md
 ```
 
 ## Contributing
-Contributions are welcome! Please feel free to submit a pull request or open an issue for any enhancements or bug fixes.
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+
+This project is licensed under the MIT License.
