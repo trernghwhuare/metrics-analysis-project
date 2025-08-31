@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "metrics_analysis_project"
+version = "0.1.0"
+description = "A project for generating metric values and statistical analysis."
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.21"
+matplotlib = "^3.4"
+scipy = "^1.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

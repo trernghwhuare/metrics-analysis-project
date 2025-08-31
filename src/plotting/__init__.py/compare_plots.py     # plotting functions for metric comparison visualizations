@@ -1,0 +1,21 @@
+def plot_metric_comparison(metrics_dict, metric_names, title="Metric Comparison", xlabel="Metrics", ylabel="Values"):
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(10, 6))
+    
+    for name in metric_names:
+        plt.plot(metrics_dict[name], label=name)
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
+
+def save_plot(filename):
+    import matplotlib.pyplot as plt
+
+    plt.savefig(filename)
+    plt.close()
