@@ -1,7 +1,13 @@
 import argparse
 import logging
+import sys
+import os
+
+# Add the parent directory to the path so we can import from metrics package
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import graph_tool.all as gt
-from .generator import compute_and_save_metrics
+from metrics.generator import compute_and_save_metrics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
