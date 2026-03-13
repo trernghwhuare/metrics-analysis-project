@@ -10,13 +10,5 @@ seaborn>=0.11.0
 # Network analysis
 networkx>=2.6.0
 
-# Testing
-pytest>=6.2.0
-
-# Documentation and reproducible research
-jupyter-book>=0.12.0
-myst-parser>=0.15.0
-jupyter>=1.0.0
-
 # Additional utilities
 tqdm>=4.62.0

@@ -20,8 +20,8 @@ project:
 site:
   template: book-theme
   options:
-    favicon: favicon.ico
-    logo: site_logo.png
+    # favicon: favicon.ico
+    # logo: site_logo.png
     navbar_title: "Network Metrics Analysis"
     home_page_in_navbar: true
     extra_navbar: |
