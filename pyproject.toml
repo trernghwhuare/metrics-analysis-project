@@ -1,16 +1,46 @@
-[tool.poetry]
-name = "metrics_analysis_project"
-version = "0.1.0"
-description = "A project for generating metric values and statistical analysis."
-authors = ["trernghwhuare <trernghwhuare@aliyun.com>"]
-license = "MIT"
-
-[tool.poetry.dependencies]
-python = "^3.8"
-numpy = "^1.21"
-matplotlib = "^3.4"
-scipy = "^1.7"
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "network-metrics-package"
+description = "A package for analyzing neural network structures using graph theory metrics"
+authors = [
+    {name = "Hua Cheng", email = "trernghwhuare@aliyun.com"},
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    "numpy>=1.21",
+    "matplotlib>=3.4",
+    "scipy>=1.7",
+    "pandas",
+    "graph-tool",
+    "seaborn>=0.10.0"
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/trernghwhuare/network-analysis-workflow"
+"Bug Tracker" = "https://github.com/trernghwhuare/network-analysis-workflow/issues"
+
+[project.scripts]
+analyze-network-metrics = "network_metrics_package.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
