@@ -1,132 +1,116 @@
-# Network Metrics Analysis Package
+# Network Metrics Analysis Framework
 
-## Overview
-The Network Metrics Analysis Package is designed to generate graph centrality metrics and create visualizations for neural network structure analysis. It provides a modular structure for metric generation, utility functions, and visualization of metric comparisons.
+A comprehensive Python framework for analyzing complex networks using graph theory metrics with built-in visualization and reproducible research capabilities.
 
-## Features
-- Compute various graph centrality metrics using graph-tool
-- Save metrics in both .npz and .csv formats
-- Generate visualizations (violin plots, box plots, heatmaps, clustermaps)
-- Analyze structural characteristics of neural networks
+![Python](https://img.shields.io/badge/python-3.7%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![CI](https://github.com/trernghwhuare/metrics-analysis-project/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/trernghwhuare/metrics-analysis-project/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/trernghwhuare/metrics-analysis-project)
+![GitHub Pages](https://img.shields.io/badge/Documentation-GitHub_Pages-success)
 
-## Installation
+## 📊 Features
 
-### Prerequisites
-- Python 3.8 or higher
-- graph-tool library (see installation instructions below)
+- **Comprehensive Graph Theory Metrics**: Calculate degree distribution, clustering coefficient, path length, and other network properties
+- **Network Structure Analysis**: Advanced analysis of computed metrics for deeper insights
+- **Interactive Visualizations**: Built-in plotting tools for comparing different network structures
+- **Reproducible Research**: Integrated Jupyter Book support for generating academic-quality documentation
+- **Modular Architecture**: Extensible design for adding new metrics and analysis methods
+- **Unit Tested**: Comprehensive test coverage for reliable results
+- **Continuous Integration**: Automated testing and documentation deployment
 
-### Installing graph-tool
-Since graph-tool is not available via pip, you need to install it separately:
+## 🚀 Quick Start
 
-#### Ubuntu/Debian:
+### Installation
+
 ```bash
-sudo apt-get install python3-graph-tool
-```
-
-#### Conda:
-```bash
-conda install -c conda-forge graph-tool
-```
-
-#### Other systems:
-See the official installation guide: https://graph-tool.skewed.de/
-
-### Install from source
-```bash
-# Make sure graph-tool is installed first
-python -c "import graph_tool.all as gt; print('graph-tool successfully imported')"
-
-# Then install the package
+# Clone the repository
+git clone https://github.com/trernghwhuare/metrics-analysis-project.git
 cd metrics-analysis-project
-pip install -e .
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install documentation dependencies (optional)
+pip install jupyter-book myst-parser
 ```
 
-## Usage
+### Basic Usage
 
-### Command Line Interface
-```bash
-# Compute metrics for a graph
-analyze-network-metrics --graph path/to/graph.gt --out output_directory --prefix network_name
-
-# Additional options
-analyze-network-metrics --graph path/to/graph.gt --out output_directory --prefix network_name --no-normalize --threads 4
-```
-
-### Python API
 ```python
-import graph_tool.all as gt
-from network_metrics_package.metrics.generator import compute_and_save_metrics
-from network_metrics_package.plotting.compare_plots import load_metrics, plot_violin, plot_box, plot_heatmap_corr, plot_clustermap
+from src.metrics.generator import NetworkMetricsGenerator
+from src.metrics.utils import analyze_network_structure
 
-# Load a graph
-G = gt.load_graph("path/to/graph.gt")
+# Initialize the metrics generator
+generator = NetworkMetricsGenerator()
 
-# Compute and save metrics
-metrics, npz_path, csv_path = compute_and_save_metrics(G, out_dir="output_directory", prefix="network_name")
+# Compute all available metrics for your network data
+metrics = generator.compute_all_metrics(your_network_data)
 
-# Load metrics for plotting
-metrics = load_metrics(npz_path)
+# Analyze network structure
+structure_analysis = analyze_network_structure(metrics)
 
-# Generate plots
-plot_violin(metrics, out="violin_plot.png")
-plot_box(metrics, out="box_plot.png")
-plot_heatmap_corr(metrics, out="correlation_heatmap.png")
-plot_clustermap(metrics, out="clustermap.png")
+# Generate visualizations
+from src.plotting.compare_plots import create_comparison_plots
+plots = create_comparison_plots(metrics)
+```
+
+### Interactive Notebook
+
+Explore the framework interactively using the provided Jupyter notebook:
+
+```bash
+jupyter notebook Network_Metrics_Analysis.ipynb
 ```
 
 
-### Supported Formats
-The package works with networks in the following formats:
-- Graph-tool (.gt) - Native format, most efficient
-- GraphML (.graphml) - Standard XML-based format
-- GML (.gml) - Graph Modeling Language
-- Edge lists (.edges, .txt) - Simple text format
-- Adjacency matrices (.csv) - Matrix representation
+## 📚 Documentation & Reproducible Research
 
+This project includes integrated documentation generation using Jupyter Book:
 
-### Analysis Output
-The analysis produces:
-1. Metrics in .npz format (for programmatic access)
-2. Metrics in .csv format (for easy viewing)
-3. Visualizations:
-   - Violin plots showing metric distributions
-   - Box plots showing metric quartiles
-   - Correlation heatmaps showing metric relationships
-   - Clustermaps showing metric groupings
+```bash
+# Build HTML documentation
+jupyter-book build .
 
-## Package Structure
-```
-network_metrics_package
-├── src
-│   └── network_metrics_package
-│       ├── __init__.py
-│       ├── main.py                  # CLI entrypoint
-│       ├── metrics
-│       │   ├── __init__.py
-│       │   └── metric_computer.py   # Core metric computation functionality
-│       └── plotting
-│           ├── __init__.py
-│           └── compare_plots.py     # Plotting functions for metric comparison visualizations
-├── tests
-│   ├── test_plotting.py             # Unit tests for plotting functions
-│   └── test_utils.py                # Unit tests for utility functions
-├── requirements.txt                 # Project dependencies
-├── pyproject.toml                   # Project configuration
-├── setup.py                         # Setup script
-├── .gitignore                       # Files to ignore in version control
-└── README.md                        # Project documentation
+# Build PDF documentation  
+jupyter-book build . --builder pdflatex
 ```
 
-## Contributing
-Contributions are welcome! Please feel free to submit a pull request or open an issue for any enhancements or bug fixes.
+The generated documentation provides:
+- Complete API reference
+- Usage examples and tutorials
+- Theoretical background on network metrics
+- Reproducible analysis workflows
 
-## License
-This project is licensed under the MIT License.
+## 🧪 Testing
 
-Copyright © 2026 Network Metrics Analysis Package Contributors
+Run the comprehensive test suite to ensure everything works correctly:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+```bash
+pytest tests/
+```
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+## 📈 Example Output
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+The framework generates professional-quality visualizations including:
+- Degree distribution plots
+- Clustering coefficient comparisons
+- Path length distributions
+- Network structure comparison charts
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests for:
+- New network metrics
+- Additional visualization types
+- Performance improvements
+- Documentation enhancements
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Built with** ❤️ **for network science researchers, data scientists, and computational biologists**
+
+*This framework enables systematic extraction of complex network structural features and supports complete reproducible research workflows from data to publication-ready results.*

@@ -1,0 +1,8 @@
+# Table of contents for the book
+format: jb-book
+root: README
+chapters:
+- file: Network_Metrics_Analysis
+  title: Interactive Analysis Notebook
+- file: protocol_document
+  title: Protocol Documentation

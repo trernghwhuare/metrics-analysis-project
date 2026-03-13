@@ -1,5 +1,22 @@
-numpy
-matplotlib
-scipy
-pandas
-pytest
+# Core scientific computing
+numpy>=1.19.0
+scipy>=1.7.0
+pandas>=1.3.0
+
+# Visualization
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Network analysis
+networkx>=2.6.0
+
+# Testing
+pytest>=6.2.0
+
+# Documentation and reproducible research
+jupyter-book>=0.12.0
+myst-parser>=0.15.0
+jupyter>=1.0.0
+
+# Additional utilities
+tqdm>=4.62.0

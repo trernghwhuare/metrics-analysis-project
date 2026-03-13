@@ -2,14 +2,33 @@
 version: 1
 project:
   id: 280e4233-47ab-4598-8d40-5c23f2335671
-  # title:
-  # description:
-  # keywords: []
-  # authors: []
+  title: "Network Metrics Analysis Framework"
+  description: "A comprehensive Python framework for analyzing complex networks using graph theory metrics with built-in visualization and reproducible research capabilities"
+  keywords: 
+    - "network analysis"
+    - "graph theory"
+    - "complex networks"
+    - "data science"
+    - "reproducible research"
+    - "visualization"
+  authors: 
+    - name: "Hua Cheng"
+      orcid: "0000-0003-0903-6766"
+      email: "trernghwhuare@aliyun.com"
   github: https://github.com/trernghwhuare/metrics-analysis-project
   # To autogenerate a Table of Contents, run "myst init --write-toc"
 site:
   template: book-theme
-  # options:
-  #   favicon: favicon.ico
-  #   logo: site_logo.png
+  options:
+    favicon: favicon.ico
+    logo: site_logo.png
+    navbar_title: "Network Metrics Analysis"
+    home_page_in_navbar: true
+    extra_navbar: |
+      <div class="footer">
+        <p>© 2026 Hua Cheng. MIT Licensed.</p>
+      </div>
+    use_repository_button: true
+    use_issues_button: true
+    use_edit_page_button: true
+    announcement: "This documentation showcases a professional network analysis framework suitable for academic and industrial applications."
