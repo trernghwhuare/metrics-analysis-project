@@ -1,28 +1,38 @@
 import pytest
-from src.plotting.compare_plots import plot_metric_comparison, save_plot
+import sys
+import os
 
-def test_plot_metric_comparison():
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from network_metrics_package.plotting.compare_plots import plot_violin, plot_box
+
+def test_plot_violin():
     # Example data for testing
-    metrics_a = [1, 2, 3, 4, 5]
-    metrics_b = [2, 3, 4, 5, 6]
-    labels = ['Metric A', 'Metric B']
+    metrics_dict = {
+        'metric_a': [1, 2, 3, 4, 5],
+        'metric_b': [2, 3, 4, 5, 6]
+    }
     
     # Call the plotting function
-    plot_metric_comparison(metrics_a, metrics_b, labels)
+    plot_violin(metrics_dict)
     
     # Check if the plot was created (you may need to adjust this based on your implementation)
     assert True  # Replace with actual checks, e.g., checking if a file was created
 
-def test_save_plot():
-    # Example plot data
-    plot_data = [1, 2, 3, 4, 5]
+def test_plot_box():
+    # Example data for testing
+    metrics_dict = {
+        'metric_a': [1, 2, 3, 4, 5],
+        'metric_b': [2, 3, 4, 5, 6]
+    }
     filename = 'test_plot.png'
     
-    # Call the save function
-    save_plot(plot_data, filename)
+    # Call the plotting function
+    plot_box(metrics_dict, out=filename)
     
     # Check if the file was created
     assert os.path.exists(filename)  # Ensure the file exists after saving
-
+    
     # Clean up
     os.remove(filename)  # Remove the test file after the test

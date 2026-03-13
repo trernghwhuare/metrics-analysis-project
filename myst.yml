@@ -1,0 +1,15 @@
+# See docs at: https://mystmd.org/guide/frontmatter
+version: 1
+project:
+  id: 280e4233-47ab-4598-8d40-5c23f2335671
+  # title:
+  # description:
+  # keywords: []
+  # authors: []
+  github: https://github.com/trernghwhuare/metrics-analysis-project
+  # To autogenerate a Table of Contents, run "myst init --write-toc"
+site:
+  template: book-theme
+  # options:
+  #   favicon: favicon.ico
+  #   logo: site_logo.png

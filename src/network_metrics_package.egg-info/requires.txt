@@ -1,0 +1,6 @@
+numpy>=1.21
+matplotlib>=3.4
+scipy>=1.7
+pandas
+graph-tool
+seaborn>=0.10.0

@@ -1,3 +1,34 @@
+Metadata-Version: 2.4
+Name: network-metrics-package
+Version: 0.1.0
+Summary: A package for analyzing neural network structures using graph theory metrics
+Home-page: https://github.com/trernghwhuare/metrics-analysis-project
+Author: Hua Cheng
+Author-email: Hua Cheng <trernghwhuare@aliyun.com>
+License: MIT
+Project-URL: Homepage, https://github.com/trernghwhuare/network-analysis-workflow
+Project-URL: Bug Tracker, https://github.com/trernghwhuare/network-analysis-workflow/issues
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.21
+Requires-Dist: matplotlib>=3.4
+Requires-Dist: scipy>=1.7
+Requires-Dist: pandas
+Requires-Dist: graph-tool
+Requires-Dist: seaborn>=0.10.0
+Dynamic: author
+Dynamic: home-page
+Dynamic: requires-python
+
 # Network Metrics Analysis Package
 
 ## Overview
@@ -74,6 +105,37 @@ plot_heatmap_corr(metrics, out="correlation_heatmap.png")
 plot_clustermap(metrics, out="clustermap.png")
 ```
 
+### Working with Different Network Formats
+
+If your network is not already in graph-tool format (.gt), you can convert it:
+
+```bash
+# For edge list format
+python load_network.py network.edgelist edgelist
+
+# For GraphML format
+python load_network.py network.graphml graphml
+
+# For GML format
+python load_network.py network.gml gml
+```
+
+### Complete Analysis Workflow
+
+For a complete analysis with all visualizations:
+
+```bash
+python usage_example.py path/to/graph.gt output_directory network_name
+```
+
+This will:
+1. Load your network
+2. Compute all metrics
+3. Save metrics in .npz and .csv formats
+4. Generate all visualizations
+5. Print summary statistics
+
+## Working with Real Networks
 
 ### Supported Formats
 The package works with networks in the following formats:
@@ -83,6 +145,16 @@ The package works with networks in the following formats:
 - Edge lists (.edges, .txt) - Simple text format
 - Adjacency matrices (.csv) - Matrix representation
 
+### Converting Your Network
+If your network is in a different format, you can use the provided conversion scripts:
+
+```bash
+# Convert edge list to graph-tool format
+python load_network.py my_network.edgelist edgelist
+
+# Convert GraphML to graph-tool format
+python load_network.py my_network.graphml graphml
+```
 
 ### Analysis Output
 The analysis produces:
@@ -121,12 +193,4 @@ network_metrics_package
 Contributions are welcome! Please feel free to submit a pull request or open an issue for any enhancements or bug fixes.
 
 ## License
-This project is licensed under the MIT License.
-
-Copyright © 2026 Network Metrics Analysis Package Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+This project is licensed under the MIT License. See the LICENSE file for more details.
