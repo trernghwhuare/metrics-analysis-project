@@ -9,6 +9,7 @@ seaborn>=0.11.0
 
 # Network analysis
 networkx>=2.6.0
+graph-tool>=2.55
 
 # Additional utilities
 tqdm>=4.62.0

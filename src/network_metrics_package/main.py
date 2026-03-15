@@ -5,11 +5,6 @@ Author: Hua Cheng <trernghwhuare@aliyun.com>
 
 import argparse
 import logging
-import sys
-import os
-
-# Add the parent directory to the path so we can import from metrics package
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import graph_tool.all as gt
 from network_metrics_package.metrics.generator import compute_and_save_metrics
