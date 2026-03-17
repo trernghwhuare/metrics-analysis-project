@@ -72,7 +72,8 @@ def analyze_network_structure(metrics_dict):
                 'std': float(series.std()),
                 'min': float(series.min()),
                 'max': float(series.max()),
-                'count': int(len(series))
+                'count': int(len(series)),
+                'nan_count': int(len(df[column]) - len(series))
             }
         else:
             summary_stats[column] = {
@@ -81,23 +82,31 @@ def analyze_network_structure(metrics_dict):
                 'std': np.nan,
                 'min': np.nan,
                 'max': np.nan,
-                'count': 0
+                'count': 0,
+                'nan_count': int(len(df[column]))
             }
     
     # Generate basic insights
     insights = []
     if len(correlations) > 1:
-        # Find highly correlated metrics
-        corr_df = pd.DataFrame(correlations)
-        high_corr_pairs = []
-        for i, col1 in enumerate(corr_df.columns):
-            for col2 in corr_df.columns[i+1:]:
-                corr_val = corr_df.loc[col1, col2]
-                if abs(corr_val) > 0.7:
-                    high_corr_pairs.append((col1, col2, corr_val))
-        
-        if high_corr_pairs:
-            insights.append(f"Found {len(high_corr_pairs)} pairs of highly correlated metrics (|r| > 0.7)")
+        # Find highly correlated metrics using numpy for safer handling
+        try:
+            corr_matrix = np.array([[correlations[col1][col2] for col2 in correlations.keys()] 
+                                   for col1 in correlations.keys()])
+            corr_cols = list(correlations.keys())
+            high_corr_pairs = []
+            for i in range(len(corr_cols)):
+                for j in range(i+1, len(corr_cols)):
+                    corr_val = corr_matrix[i, j]
+                    if isinstance(corr_val, (int, float)) and not np.isnan(corr_val):
+                        if abs(corr_val) > 0.7:
+                            high_corr_pairs.append((corr_cols[i], corr_cols[j], corr_val))
+            
+            if high_corr_pairs:
+                insights.append(f"Found {len(high_corr_pairs)} pairs of highly correlated metrics (|r| > 0.7)")
+        except Exception as e:
+            logging.warning(f"Failed to compute correlation pairs: {e}")
+            pass
     
     # Check for metrics with low variance
     low_variance_metrics = []
@@ -108,6 +117,18 @@ def analyze_network_structure(metrics_dict):
     if low_variance_metrics:
         insights.append(f"Metrics with low variance (< 0.1): {', '.join(low_variance_metrics)}")
     
+    # Check for metrics with high NaN counts
+    high_nan_metrics = []
+    total_vertices = len(df)
+    for metric, stats in summary_stats.items():
+        if stats['nan_count'] > 0:
+            nan_ratio = stats['nan_count'] / total_vertices
+            if nan_ratio > 0.5:  # More than 50% NaN
+                high_nan_metrics.append(f"{metric} ({nan_ratio:.1%} NaN)")
+    
+    if high_nan_metrics:
+        insights.append(f"Metrics with high NaN ratios: {', '.join(high_nan_metrics)}")
+    
     if not insights:
         insights.append("No specific structural patterns detected")
     
@@ -116,3 +137,61 @@ def analyze_network_structure(metrics_dict):
         'summary_stats': summary_stats,
         'insights': insights
     }
+
+def diagnose_centrality_issues(metrics_dict, graph_info=None):
+    """
+    Diagnose potential issues with centrality metrics that result in NaN or zero values.
+    
+    Args:
+        metrics_dict (dict): Dictionary of metric arrays
+        graph_info (dict): Optional graph information (vertices, edges, components)
+        
+    Returns:
+        dict: Diagnosis results with recommendations
+    """
+    diagnosis = {
+        'issues': [],
+        'recommendations': [],
+        'graph_summary': graph_info or {}
+    }
+    
+    total_vertices = None
+    for metric_name, metric_array in metrics_dict.items():
+        if total_vertices is None:
+            total_vertices = len(metric_array)
+        nan_count = np.sum(np.isnan(metric_array))
+        zero_count = np.sum(metric_array == 0)
+        finite_count = np.sum(np.isfinite(metric_array))
+        
+        if nan_count > 0:
+            diagnosis['issues'].append(f"{metric_name}: {nan_count}/{total_vertices} NaN values")
+            
+        if finite_count == 0:
+            diagnosis['issues'].append(f"{metric_name}: All values are NaN or infinite")
+            
+        if finite_count > 0 and np.allclose(metric_array[np.isfinite(metric_array)], 0):
+            diagnosis['issues'].append(f"{metric_name}: All finite values are zero (possible normalization issue)")
+    
+    # Add recommendations based on common issues
+    if any('closeness' in issue for issue in diagnosis['issues']):
+        diagnosis['recommendations'].append(
+            "Closeness centrality often produces NaN in disconnected graphs. "
+            "Consider using harmonic closeness or analyzing per connected component."
+        )
+        
+    if any('hits' in issue for issue in diagnosis['issues']):
+        diagnosis['recommendations'].append(
+            "HITS algorithm requires sufficient linking structure. "
+            "Consider using PageRank or degree centrality for sparse neural networks."
+        )
+        
+    if any('eigenvector' in issue for issue in diagnosis['issues']):
+        diagnosis['recommendations'].append(
+            "Eigenvector centrality may fail to converge on disconnected components. "
+            "Consider using Katz centrality as a more robust alternative."
+        )
+        
+    if not diagnosis['issues']:
+        diagnosis['recommendations'].append("All centrality metrics appear to be computed successfully.")
+        
+    return diagnosis

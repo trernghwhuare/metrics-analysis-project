@@ -101,10 +101,20 @@ def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, n
             metrics['betweenness'] = np.full(G.num_vertices(), np.nan)
 
         try:
-            metrics['closeness'] = sanitize_array(gt.closeness(G).get_array())
+            # Use harmonic closeness centrality which works on disconnected graphs
+            # Harmonic closeness = sum(1/distance) for all reachable nodes
+            # This avoids the problem of standard closeness returning 0 for disconnected graphs
+            harmonic_closeness = gt.closeness(G, harmonic=True)
+            metrics['closeness'] = sanitize_array(harmonic_closeness.get_array())
         except Exception as e:
-            logger.warning("closeness failed: %s", e)
-            metrics['closeness'] = np.full(G.num_vertices(), np.nan)
+            logger.warning("harmonic closeness failed: %s", e)
+            try:
+                # Fallback to standard closeness (will return 0 for disconnected components)
+                standard_closeness = gt.closeness(G, harmonic=False)
+                metrics['closeness'] = sanitize_array(standard_closeness.get_array())
+            except Exception as e2:
+                logger.warning("standard closeness also failed: %s", e2)
+                metrics['closeness'] = np.full(G.num_vertices(), np.nan)
 
         try:
             # metrics['eigenvector'] = _metric_on_largest_component_mapped(G, lambda g, w=None: gt.eigenvector(g, w if w is not None else None))

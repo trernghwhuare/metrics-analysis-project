@@ -11,6 +11,7 @@ import matplotlib.ticker
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import cbook
+import logging
 
 
 sns.set(style="whitegrid")
@@ -99,204 +100,194 @@ def plot_violin(metrics_dict, metric_names=None, title="Metric correlation", out
     
     # Check if we should use log scale based on data range
     try:
-        # Concatenate all data to check range
         all_data = np.concatenate(data_list)
-        # Only consider positive values for log scaling
-        positive_data = all_data[all_data > 0]
-        use_log_scale = False
-        if len(positive_data) > 0:
-            data_range = np.log10(np.max(positive_data)) - np.log10(np.min(positive_data))
-            use_log_scale = data_range > 2  # Use log scale if data spans more than 2 orders of magnitude
-        
-        # Transform data for log scale if needed
-        if use_log_scale:
-            transformed_data = []
-            for d in data_list:
-                positive_d = d[d > 0]
-                if len(positive_d) > 0:
-                    # Use log1p instead of log10 to avoid negative values for small positive numbers
-                    transformed_data.append(np.log1p(positive_d))
-                else:
-                    # If no positive values, create a small array with a default value
-                    transformed_data.append(np.array([0]))
-            data_list = transformed_data
-    except Exception as e:
-        print(f"Warning: Could not determine log scaling: {e}")
-        use_log_scale = False
+        use_log = (np.max(all_data) / np.min(all_data[np.nonzero(all_data)])) > 100 if np.any(all_data != 0) else False
+    except:
+        use_log = False
 
     fig, ax = plt.subplots(figsize=figsize)
     
-    # Create violin plots for each metric individually
-    try:
-        parts = ax.violinplot(data_list, positions=range(1, len(data_list) + 1), 
-                              showmeans=True, showmedians=False, showextrema=False)
+    if use_log:
+        # Apply log transform to positive data only
+        log_data_list = []
+        for d in data_list:
+            d_pos = d[d > 0]
+            if len(d_pos) > 0:
+                log_data_list.append(np.log10(d_pos))
+            else:
+                log_data_list.append(np.array([]))
+        
+        # Remove empty arrays
+        filtered_log_data_list = [d for d in log_data_list if len(d) > 0]
+        filtered_labels = [valid_metric_names[i] for i, d in enumerate(log_data_list) if len(d) > 0]
+        
+        if not filtered_log_data_list:
+            print("No positive data for log-scale violin plot")
+            plt.close(fig)
+            return
+            
+        parts = ax.violinplot(filtered_log_data_list, showmeans=False, showmedians=False, showextrema=False)
+        
+        # Customize violins
         for pc in parts['bodies']:
-            pc.set_facecolor('pink')
+            pc.set_facecolor('#D43F3A')
             pc.set_edgecolor('black')
             pc.set_alpha(1)
             
-        # Calculate quartiles and whiskers for each dataset individually
-        quartile1, medians, quartile3 = [], [], []
-        whiskers = []
+        # Add quartiles and medians
+        quartile1 = [np.percentile(d, 25) for d in filtered_log_data_list]
+        medians = [np.percentile(d, 50) for d in filtered_log_data_list]
+        quartile3 = [np.percentile(d, 75) for d in filtered_log_data_list]
         
-        for d in data_list:
-            q1, med, q3 = np.percentile(d, [25, 50, 75])
-            quartile1.append(q1)
-            medians.append(med)
-            quartile3.append(q3)
-            
-            # Calculate whiskers
-            lower_whisker, upper_whisker = adjacent_values(np.sort(d), q1, q3)
-            whiskers.append([lower_whisker, upper_whisker])
-            
-        quartile1 = np.array(quartile1)
-        medians = np.array(medians)
-        quartile3 = np.array(quartile3)
-        whiskers = np.array(whiskers)
-        
-        whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
         inds = np.arange(1, len(medians) + 1)
         ax.scatter(inds, medians, marker='o', color='white', s=30, zorder=3)
         ax.vlines(inds, quartile1, quartile3, color='k', linestyle='-', lw=5)
-        ax.vlines(inds, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
-
-        # Set axis style and labels
+        
+        # Set log scale labels
+        ax.set_xticks(inds)
+        ax.set_xticklabels(filtered_labels, rotation=45, ha='right')
+        ax.set_ylabel('log10(Value)')
+        
+    else:
+        parts = ax.violinplot(data_list, showmeans=False, showmedians=False, showextrema=False)
+        
+        # Customize violins
+        for pc in parts['bodies']:
+            pc.set_facecolor('#D43F3A')
+            pc.set_edgecolor('black')
+            pc.set_alpha(1)
+            
+        # Add quartiles and medians
+        quartile1 = [np.percentile(d, 25) for d in data_list]
+        medians = [np.percentile(d, 50) for d in data_list]
+        quartile3 = [np.percentile(d, 75) for d in data_list]
+        
+        inds = np.arange(1, len(medians) + 1)
+        ax.scatter(inds, medians, marker='o', color='white', s=30, zorder=3)
+        ax.vlines(inds, quartile1, quartile3, color='k', linestyle='-', lw=5)
+        
         set_axis_style(ax, valid_metric_names)
-        ax.set_xticklabels(valid_metric_names, rotation=45, ha='right')
-        
-        # Set y-axis scale and label
-        if use_log_scale:
-            ax.set_ylabel('Value (log1p scale)')
-            # Add information text about scaling
-            ax.text(0.02, 0.98, 'Log1p scale', transform=ax.transAxes, 
-                    verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-        else:
-            ax.set_ylabel('Value')
-        
-        ax.set_title('Violin plot')
-        
-        plt.tight_layout()
-        if out: plt.savefig(out); plt.close()
-    except Exception as e:
-        print(f"Error creating violin plot: {e}")
-        import traceback
-        traceback.print_exc()
-        plt.close()
+    
+    ax.set_title(title)
+    plt.tight_layout()
+    if out:
+        plt.savefig(out)
+    plt.close(fig)
 
-def plot_box(metrics_dict, metric_names=None, title="Metric correlation (boxplot)", out=None, figsize=(10,8)):
+
+def plot_box(metrics_dict, metric_names=None, title="Metric Box Plot", out=None, figsize=(10,8)):
     if metric_names is None:
         metric_names = list(metrics_dict.keys())
     
-    df = pd.DataFrame({k: metrics_dict[k] for k in metric_names})
-    np.random.seed(19680801)
-    
-    # Process data to ensure all arrays have the same length
-    used_data = []
+    # Similar data processing as violin plot
+    valid_metrics = {}
     valid_metric_names = []
-    for k in metric_names:
-        series = df[k].dropna()
-        if len(series) > 0:
-            used_data.append(np.array(series))
-            valid_metric_names.append(k)
     
-    if not used_data:
+    for name in metric_names:
+        try:
+            data = np.array(metrics_dict[name])
+            if data.dtype == object:
+                flattened = []
+                for item in data.flat:
+                    if isinstance(item, (list, tuple, np.ndarray)):
+                        flattened.extend(np.asarray(item).flatten())
+                    else:
+                        flattened.append(item)
+                data = np.array(flattened, dtype=float)
+            else:
+                data = data.flatten()
+            
+            data = data[~np.isnan(data)]
+            if len(data) > 0:
+                valid_metrics[name] = data
+                valid_metric_names.append(name)
+        except Exception as e:
+            print(f"Warning: Could not process metric {name}: {e}")
+            continue
+    
+    if not valid_metric_names:
         print("No valid data for box plot")
         return
     
-    # Check if we should use log scale based on data range
-    all_data = np.concatenate(used_data)
-    # Only consider positive values for log scaling
-    positive_data = all_data[all_data > 0]
-    use_log_scale = False
-    if len(positive_data) > 0:
-        data_range = np.log10(np.max(positive_data)) - np.log10(np.min(positive_data))
-        use_log_scale = data_range > 2  # Use log scale if data spans more than 2 orders of magnitude
+    # Prepare data for box plot
+    data_list = []
+    for name in valid_metric_names:
+        metric_data = valid_metrics[name]
+        if metric_data.ndim > 1:
+            metric_data = metric_data.flatten()
+        metric_data = metric_data[np.isfinite(metric_data)]
+        if len(metric_data) > 0:
+            data_list.append(metric_data)
+        else:
+            print(f"Warning: No finite data for metric {name}")
     
-    # Transform data for log scale if needed
-    if use_log_scale:
-        transformed_data = []
-        for data in used_data:
-            positive_data = data[data > 0]
-            if len(positive_data) > 0:
-                transformed_data.append(np.log10(positive_data))
-            else:
-                transformed_data.append(np.array([0]))
-        used_data = transformed_data
+    if not data_list:
+        print("No valid finite data for box plot")
+        return
     
     fig, ax = plt.subplots(figsize=figsize)
-    ax.set_title("Metric distributions")
-    ax.set_xlabel("Metric")
-    
-    # Create box plots for each metric
-    bp = ax.boxplot(used_data, positions=range(1, len(used_data) + 1),
-                    patch_artist=True, 
-                    boxprops=dict(facecolor='lightblue', color='black'),
-                    medianprops=dict(color='red'), 
-                    whiskerprops=dict(color='black'),
-                    capprops=dict(color='black'), 
-                    flierprops=dict(markerfacecolor='gray', marker='o', markersize=5, 
-                                  linestyle='none', markeredgecolor='black'))
-    
-    # Set y-axis scale and label
-    if use_log_scale:
-        ax.set_ylabel('Value (log10 scale)')
-        # Add information text about scaling
-        ax.text(0.02, 0.98, 'Log10 scale', transform=ax.transAxes, 
-                verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-    else:
-        ax.set_ylabel('Value')
-    
-    ax.set_xticklabels(valid_metric_names, rotation=45, ha='right')
+    ax.boxplot(data_list, labels=valid_metric_names)
+    ax.set_title(title)
+    ax.set_ylabel('Value')
+    plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
-    if out: plt.savefig(out); plt.close()
-    
-def plot_heatmap_corr(metrics_dict, metric_names=None, title="Metric correlation (heatmap)", out=None, figsize=(8,8), annot=False):
+    if out:
+        plt.savefig(out)
+    plt.close(fig)
+
+
+def plot_heatmap_corr(metrics_dict, metric_names=None, title="Metric Correlation Heatmap", out=None, annot=True, figsize=(10,8)):
     if metric_names is None:
         metric_names = list(metrics_dict.keys())
-    df = pd.DataFrame({k: metrics_dict[k] for k in metric_names})
     
-    # Filter out columns with no valid data
-    valid_cols = [c for c in df.columns if df[c].notna().any() and (df[c].std() > 0 or np.nanstd(df[c]) > 0)]
-    if len(valid_cols) == 0:
-        print("No valid columns for heatmap")
-        return
-    elif len(valid_cols) == 1:
-        print("Only one valid column for heatmap")
-        # Create a 1x1 heatmap
-        df_single = df[[valid_cols[0]]].to_frame()
-        corr = df_single.corr(method='spearman')
-        fig, ax = plt.subplots(figsize=figsize)
-        sns.heatmap(corr, annot=annot, cmap="vlag", center=0, square=True, linewidths=.5)
-        plt.title(title)
-        plt.tight_layout()
-        if out: plt.savefig(out); plt.close()
-        return
-        
-    df = df.loc[:, valid_cols]
+    # Create DataFrame with all metrics
+    df_data = {}
+    for name in metric_names:
+        try:
+            data = np.array(metrics_dict[name])
+            if data.dtype == object:
+                # Handle object arrays by taking first element or flattening
+                if len(data) > 0:
+                    if isinstance(data[0], (list, tuple, np.ndarray)):
+                        data = np.array([item[0] if len(item) > 0 else np.nan for item in data if isinstance(item, (list, tuple, np.ndarray))])
+                    else:
+                        data = data.astype(float)
+            df_data[name] = data
+        except Exception as e:
+            print(f"Warning: Could not process metric {name} for correlation: {e}")
+            continue
     
-    # Remove rows with all NaN values
+    if not df_data:
+        print("No valid data for correlation heatmap")
+        return
+    
+    df = pd.DataFrame(df_data)
+    
+    # Remove rows with all NaN
     df = df.dropna(how='all')
     
     if len(df) == 0:
-        print("No valid rows for heatmap")
+        print("No valid rows for correlation heatmap")
         return
     
-    corr = df.corr(method='spearman')
-    corr = corr.replace([np.inf, -np.inf], np.nan).fillna(0.0)
-    corr = (corr + corr.T) / 2.0
-    # Create a copy to avoid read-only array error
-    corr_values = corr.values.copy()
-    np.fill_diagonal(corr_values, 1.0)
-    corr = pd.DataFrame(corr_values, index=corr.index, columns=corr.columns)
+    # Compute correlation matrix
+    try:
+        corr = df.corr(method='spearman')
+    except Exception as e:
+        print(f"Error computing correlation: {e}")
+        return
     
+    # Plot heatmap
     fig, ax = plt.subplots(figsize=figsize)
-    sns.heatmap(corr, annot=annot, cmap="vlag", center=0, square=True, linewidths=.5)
-    plt.title(title)
+    sns.heatmap(corr, annot=annot, cmap='coolwarm', center=0, ax=ax)
+    ax.set_title(title)
     plt.tight_layout()
-    if out: plt.savefig(out); plt.close()
+    if out:
+        plt.savefig(out)
+    plt.close(fig)
 
 
-def plot_clustermap(metrics_dict, metric_names=None, title="Metric clustermap", out=None, figsize=(10,10)):
+def plot_clustermap(metrics_dict, metric_names=None, title="Metric Clustermap", out=None, figsize=(10,8)):
     if metric_names is None:
         metric_names = list(metrics_dict.keys())
     df = pd.DataFrame({k: metrics_dict[k] for k in metric_names})
@@ -342,16 +333,123 @@ def plot_clustermap(metrics_dict, metric_names=None, title="Metric clustermap", 
             plt.close()
 
 
-def save_plot(filename):
-    plt.savefig(filename)
-    plt.close()
+def plot_facetgrid_degree_centrality_from_npz(npz_path, base_name, out_dir=".", figsize=(12, 8)):
+    """
+    Generate facet grid plots from NPZ file containing metrics.
+    This assumes the NPZ file contains both 'degrees' and centrality metrics.
+    """
+    metrics = load_metrics(npz_path)
+    
+    # Check if degrees are available
+    if 'degrees' not in metrics:
+        logging.warning("No 'degrees' found in metrics file. Skipping facet grid plot.")
+        return
+    
+    degrees = metrics['degrees']
+    nc = len(degrees)
+    logging.info(f"Using all components: total vertices = {nc}")
+    
+    if nc == 0:
+        logging.warning("Largest component empty — skipping all metric plots.")
+        return
+    
+    # Define the metrics to plot
+    metric_mapping = {
+        'bt': 'betweenness',
+        'pr': 'pagerank', 
+        'V': 'eigenvector',
+        'katz': 'katz',
+        'hitsX': 'hits_authority',
+        'hitsY': 'hits_hub',
+        't': 'eigentrust',
+        'tt': 'trust_transitivity',
+        'c': 'closeness'
+    }
+    
+    # Helper function to align metric to degree indices and filter valid values
+    def _align_mask(metric_arr):
+        arr = np.array(metric_arr, dtype=float)
+        if len(arr) != len(degrees):
+            logging.warning(f"Metric array length {len(arr)} doesn't match degrees length {len(degrees)}")
+            return None
+            
+        valid_mask = ~np.isnan(arr) & ~np.isinf(arr)
+        if not np.any(valid_mask):
+            return None
+        return degrees[valid_mask], arr[valid_mask]
+    
+    # Collect per-metric aligned pairs (degree, metric)
+    aligned_metric_arrays = {}
+    for short_name, full_name in metric_mapping.items():
+        if full_name in metrics:
+            arr = metrics[full_name]
+            pair = _align_mask(arr)
+            if pair is not None and len(pair[0]) > 0:
+                aligned_metric_arrays[short_name] = pair
+    
+    logging.info(f"Number of valid metric series: {len(aligned_metric_arrays)}")
+    logging.info(f"Total vertices considered: {nc}")
+
+    # Create facet plot
+    data_list = []
+    for metric_name, (deg_arr, metric_arr) in aligned_metric_arrays.items():
+        df = pd.DataFrame({'Degree': deg_arr, 'Centrality': metric_arr, 'Metric': metric_name})
+        data_list.append(df)
+
+    if not data_list:
+        logging.warning("No valid metric data for faceted plots.")
+        return
+        
+    combined_df = pd.concat(data_list, ignore_index=True)
+    sns.set_style('whitegrid')
+    g = sns.FacetGrid(combined_df, col='Metric', hue='Metric',
+                      palette='tab20', sharey=False, height=3, aspect=1.2, col_wrap=3)
+    g.map(sns.scatterplot, 'Degree', 'Centrality', alpha=0.7, s=20)
+    try:
+        g.map(sns.kdeplot, 'Degree', 'Centrality', fill=True, levels=10, alpha=0.3, warn_singular=False)
+    except Exception:
+        pass
+    g.add_legend()
+    g.set_axis_labels('Degree', 'Centrality')
+    g.fig.suptitle(f"{base_name}", fontsize=12)
+    plt.tight_layout()
+    
+    # Ensure output directory exists
+    os.makedirs(out_dir, exist_ok=True)
+    output_path = os.path.join(out_dir, f"{base_name}_facetgrid.png")
+    g.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close(g.fig)
+    logging.info(f"Saved facet grid plot to {output_path}")
+
 
 def main(npz_path=None, out_dir="metrics_out", plots=None):
+    """
+    Main function to generate various plots from metrics files.
+    
+    Parameters:
+    -----------
+    npz_path : str or None
+        Path to a single .npz file, or None to process all in metrics_out/
+    out_dir : str
+        Output directory for plots
+    plots : list or None
+        List of plot types to generate: ['violin', 'box', 'heatmap', 'clustermap', 'facetgrid']
+    """
+    if plots is None:
+        plots = ["violin", "box", "heatmap", "clustermap"]
+    
     if npz_path is None:
-        files = [f for f in os.listdir(os.path.join(os.getcwd(), "metrics_out")) if f.endswith(".npz")]
-        print(files)
+        # Process all .npz files in metrics_out directory
+        metrics_dir = "metrics_out"
+        if not os.path.exists(metrics_dir):
+            print(f"Metrics directory {metrics_dir} not found")
+            return
+            
+        files = [f for f in os.listdir(metrics_dir) if f.endswith('.npz')]
         if not files:
-            raise FileNotFoundError("No .npz files found in metrics_out directory.")
+            print(f"No .npz files found in {metrics_dir}")
+            return
+            
         for filename in files:
             npz_path = os.path.join(os.getcwd(), "metrics_out", filename)
             base_name = os.path.splitext(os.path.basename(npz_path))[0]
@@ -362,9 +460,6 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
                 print(f"Error loading metrics from {npz_path}: {e}")
                 continue
                 
-            if plots is None:
-                plots = ["violin", "box", "heatmap", "clustermap"]
-
             if "violin" in plots:
                 try:
                     plot_violin(metrics, out=os.path.join(out_dir, f"{base_name}_violin.png"))
@@ -385,6 +480,11 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
                     plot_clustermap(metrics, out=os.path.join(out_dir, f"{base_name}_clustermap.png"))
                 except Exception as e:
                     print(f"Error creating clustermap for {base_name}: {e}")
+            if "facetgrid" in plots:
+                try:
+                    plot_facetgrid_degree_centrality_from_npz(npz_path, base_name, out_dir)
+                except Exception as e:
+                    print(f"Error creating facetgrid plot for {base_name}: {e}")
     else:
         base_name = os.path.splitext(os.path.basename(npz_path))[0]
         os.makedirs(out_dir, exist_ok=True)
@@ -394,9 +494,6 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
             print(f"Error loading metrics from {npz_path}: {e}")
             return
             
-        if plots is None:
-            plots = ["violin", "box", "heatmap", "clustermap"]
-
         if "violin" in plots:
             try:
                 plot_violin(metrics, out=os.path.join(out_dir, f"{base_name}_violin.png"))
@@ -417,10 +514,16 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
                 plot_clustermap(metrics, out=os.path.join(out_dir, f"{base_name}_clustermap.png"))
             except Exception as e:
                 print(f"Error creating clustermap for {base_name}: {e}")
+        if "facetgrid" in plots:
+            try:
+                plot_facetgrid_degree_centrality_from_npz(npz_path, base_name, out_dir)
+            except Exception as e:
+                print(f"Error creating facetgrid plot for {base_name}: {e}")
+
 
 if __name__ == "__main__":
     # simple CLI: set METRICS_NPZ and comma-separated PLOTS env vars or edit defaults here
     npz = os.environ.get("METRICS_NPZ", None)
-    plots_env = os.environ.get("PLOTS", "violin,box,heatmap,clustermap")
+    plots_env = os.environ.get("PLOTS", "violin,box,heatmap,clustermap,facetgrid")
     plots_list = [p.strip() for p in plots_env.split(",") if p.strip()]
     main(npz_path=npz, out_dir="metrics_out", plots=plots_list)
