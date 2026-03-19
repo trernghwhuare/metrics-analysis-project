@@ -86,7 +86,11 @@ def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, n
     metrics = {}
     logger.info("Computing metrics for graph with %d vertices, %d edges", G.num_vertices(), G.num_edges())
 
-    with gt.openmp_context(nthreads=nthreads):
+    # Set number of threads for OpenMP (compatible with graph-tool 2.59+)
+    original_threads = gt.openmp_get_num_threads()
+    gt.openmp_set_num_threads(nthreads)
+    
+    try:
         try:
             metrics['pagerank'] = sanitize_array(gt.pagerank(G).get_array())
         except Exception as e:
@@ -168,6 +172,9 @@ def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, n
         except Exception as e:
             logger.warning("trust_transitivity failed: %s", e)
             metrics['trust_transitivity'] = np.full(G.num_vertices(), np.nan)
+
+    finally:
+        gt.openmp_set_num_threads(original_threads)
 
     # sanitize lengths and normalize
     for k, v in list(metrics.items()):

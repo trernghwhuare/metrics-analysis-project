@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as follows:"
+authors:
+  - family-names: "Cheng"
+    given-names: "Hua"
+    email: "trernghwhuare@aliyun.com"
+title: "Network Metrics Analysis Framework"
+version: "0.1.0"
+date-released: "2026-03-19"
+license: "MIT"
+repository-code: "https://github.com/trernghwhuare/metrics-analysis-project"
+url: "https://github.com/trernghwhuare/metrics-analysis-project"
+keywords:
+  - network-analysis
+  - graph-theory
+  - complex-networks
+  - computational-neuroscience
+  - connectomics
+  - reproducible-research
+abstract: "A comprehensive Python framework for analyzing complex networks using graph theory metrics with built-in visualization and reproducible research capabilities. Designed for computational neuroscience applications including brain connectivity analysis and neural circuit characterization."

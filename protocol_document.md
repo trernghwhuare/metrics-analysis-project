@@ -2,6 +2,15 @@
 
 This document provides specific instructions for analyzing neural network files with the network_metrics_package.
 
+## 🧠 Neuroscience Context
+
+This framework is designed for analyzing **brain connectivity networks** and **neural circuit data**. The included `.gt` files represent:
+- **Structural brain networks** derived from neuroimaging or electrophysiology data
+- **Functional connectivity patterns** between brain regions
+- **Synthetic neural circuits** for methodological validation
+
+The computed graph theory metrics (PageRank, Betweenness, Closeness, etc.) are standard measures used in **connectomics** and **computational neuroscience** to understand brain network organization, information flow, and functional specialization.
+
 ## Network Files
 
 The following network files available for analyzeing in this project:

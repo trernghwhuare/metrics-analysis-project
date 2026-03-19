@@ -1,0 +1,30 @@
+# Book settings
+title: Network Metrics Analysis Framework
+author: Hua Cheng
+copyright: "2026"
+
+# Information about where the book exists on the web
+repository:
+  url: https://github.com/trernghwhuare/metrics-analysis-project
+  path_to_book: .
+
+# Add GitHub buttons to your pages
+html:
+  use_issues_button: true
+  use_repository_button: true
+  use_edit_page_button: true
+
+# Configure execution
+execute:
+  execute_notebooks: auto
+
+# Configure the navigation sidebar
+sphinx:
+  config:
+    html_theme_options:
+      announcement: "This documentation showcases a professional network analysis framework suitable for academic and industrial applications."
+      home_page_in_navbar: true
+      extra_navbar: |
+        <div class="footer">
+          <p>© 2026 Hua Cheng. MIT Licensed.</p>
+        </div>

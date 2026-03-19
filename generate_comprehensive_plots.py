@@ -54,12 +54,15 @@ def plot_individual_joint_plots(aligned_degrees, aligned_metric_arrays, base_nam
         color = metric_colors.get(metric_name, "#000000")  # Default to black if not found
 
         try:
-            g = sns.jointplot(data=valid_data, x='Degree', y=metric_name, kind="kde", level=25,
-                              color=color, joint_kws={'alpha': 0.7}, marginal_ticks=True,
-                              fill=True, height=5)
+            # Create joint KDE plot matching seaborn example style with fill=False for better distinction
+            g = sns.jointplot(data=valid_data, x='Degree', y=metric_name, kind="kde", 
+                              levels=10, color=color, fill=False, alpha=0.7, height=6)
             
-            g.plot_marginals(sns.histplot, element="step", kde=True, color=color)
-            g.fig.suptitle(f"Joint Distribution of Degree vs {metric_name} - {base_name}", y=1.02)
+            # Use rug plots for marginals to show individual data points
+            g.plot_marginals(sns.rugplot, height=0.5, color=color, alpha=0.7)
+            
+            g.set_axis_labels('Degree', metric_name.replace('_', ' ').title())
+            g.fig.suptitle(f"Joint KDE Distribution: Degree vs {metric_name.replace('_', ' ').title()} - {base_name}", y=1.02)
             plt.tight_layout()
             output_path = os.path.join(out_dir, f"{base_name}_jointplot_degree_{metric_name}.png")
             g.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -168,10 +171,28 @@ def plot_multivariate_metrics(metrics_data, metric_names, base_name, out_dir="."
             return
         
         sns.set_theme(style="white")
-        # Create PairGrid - use only scatter plots to avoid KDE issues with low-variation data
+        # Create PairGrid - attempt KDE plots with scatter fallback for problematic data
         g = sns.PairGrid(df_valid, diag_sharey=False)
-        g.map_upper(sns.scatterplot, alpha=0.7, s=50)
-        g.map_lower(sns.scatterplot, alpha=0.7, s=50)
+        
+        def safe_kdeplot(x, y, **kwargs):
+            """Attempt KDE plot, fall back to scatter if it fails."""
+            try:
+                # Check if we have enough unique values for meaningful KDE
+                x_unique = len(np.unique(x.dropna()))
+                y_unique = len(np.unique(y.dropna()))
+                if x_unique <= 2 or y_unique <= 2:
+                    # Use scatter plot for low-variation data
+                    sns.scatterplot(x=x, y=y, **kwargs)
+                else:
+                    # Use KDE for data with sufficient variation
+                    sns.kdeplot(x=x, y=y, fill=True, alpha=0.7, warn_singular=False, **kwargs)
+            except Exception as e:
+                # Fall back to scatter plot if KDE fails
+                logging.warning(f"KDE failed, using scatter plot: {e}")
+                sns.scatterplot(x=x, y=y, **kwargs)
+        
+        g.map_upper(safe_kdeplot)
+        g.map_lower(safe_kdeplot)
         g.map_diag(sns.histplot, element="step", linewidth=2, kde=True)
         
         g.fig.suptitle(f"Multivariate View of Centrality Metrics - {base_name}", y=1.02)
@@ -239,6 +260,7 @@ def generate_all_plots_simple(degrees, metrics, base_name, out_dir="."):
         base_name,
         out_dir
     )
+
 def main():
     """Main function for standalone execution."""
     import argparse
@@ -273,6 +295,8 @@ def main():
     
     generate_all_plots_simple(degrees, metrics, base_name, args.output_dir)
     logging.info(f"All plots generated successfully in {args.output_dir}/")
+
+
 
 if __name__ == "__main__":
     main()

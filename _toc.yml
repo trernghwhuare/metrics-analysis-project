@@ -6,3 +6,5 @@ chapters:
   title: Interactive Analysis Notebook
 - file: protocol_document
   title: Protocol Documentation
+- file: paper
+  title: Research Paper

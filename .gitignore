@@ -2,3 +2,51 @@
 _build
 *.net.nml
 build/
+
+# Generated results and metrics
+results/
+results_weighted/
+metrics_out_*/
+test_output_fixed/
+gt_plots/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+package.json
+
+# Distribution / packaging
+dist/
+.coverage
+.htmlcov/
+.tox/
+.coverage.*
+.cache
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# pixi
+pixi.lock
+
+# Egg info
+*.egg-info/
