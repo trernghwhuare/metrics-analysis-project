@@ -5,7 +5,7 @@
 **Background**: Visualization of neuronal circuit models remains a critical challenge in computational neuroscience, requiring specialized tools for representing complex network structures and dynamic properties.
 **Objective**: We present a comprehensive, reproducible workflow integrating modern dependency management (pixi), interactive documentation (MyST/Jupyter Book), and advanced visualization capabilities for neuronal circuit models using graph-tool and Python scientific stack.
 **Methods**: The workflow combines graph-theoretical analysis with publication-quality visualization tools (matplotlib, seaborn, graph-tool.draw) to create static images and animated GIFs of neuronal connectivity patterns, community structure, and network metrics.
-**Results**: Successful implementation demonstrates complete reproducibility across platforms (Linux, macOS) with zero-installation access via MyBinder, validated with graph-tool version 2.98. The framework generates violin plots, box plots, correlation heatmaps, and clustermaps for comparative network analysis, with capability to produce animated visualizations of dynamic circuit properties.
+**Results**: Successful implementation demonstrates complete reproducibility across platforms (Linux, macOS) with zero-installation access via MyBinder, validated with graph-tool version 2.98. The framework generates strip plots, box plots, correlation heatmaps, and clustermaps for comparative network analysis, with capability to produce animated visualizations of dynamic circuit properties.
 **Significance**: This protocol provides a template for reproducible visualization of neuronal circuit models meeting open science standards and Neurolibre publication requirements.
 
 ## Introduction
@@ -25,7 +25,7 @@ Here we present a standardized protocol that addresses these visualization chall
 
 1. **Integrated visualization pipeline**: Combines graph-tool's native drawing capabilities with matplotlib/seaborn for publication-quality static visualizations
 2. **Animated GIF generation**: Capability to create dynamic visualizations showing network evolution, community detection processes, or parameter sweeps
-3. **Comparative analysis framework**: Built-in tools for violin plots, box plots, correlation heatmaps, and clustermaps to compare multiple neuronal circuit models
+3. **Comparative analysis framework**: Built-in tools for strip plots, box plots, correlation heatmaps, and clustermaps to compare multiple neuronal circuit models
 4. **pixi-based dependency management** replacing traditional conda environments with improved cross-platform consistency [9]
 5. **MyST-powered documentation** with Jupyter Book integration enabling executable visualization protocols [10]
 6. **Neurolibre/MyBinder compatibility** enabling zero-installation peer review and interactive exploration [11]
@@ -47,7 +47,7 @@ Our implementation successfully integrates the following visualization component
 The workflow has been validated on Ubuntu 24.04 (linux-64) with successful execution of all computational tasks including:
 - Graph-tool import and version verification (v2.98)
 - Jupyter Notebook launch with interactive analysis capabilities  
-- Generation of comparative visualizations (violin plots, box plots, heatmaps, clustermaps)
+- Generation of comparative visualizations (strip plots, box plots, heatmaps, clustermaps)
 - MyST documentation build processing 3 source files
 - Unit test execution with pytest framework
 
@@ -57,7 +57,7 @@ The framework provides comprehensive visualization capabilities for neuronal cir
 
 #### Static Visualizations
 - **Network topology plots**: Using graph-tool.draw for direct network visualization with customizable node/edge properties
-- **Statistical summaries**: Violin plots and box plots showing distributions of network metrics across different circuit models
+- **Statistical summaries**: strip plots and box plots showing distributions of network metrics across different circuit models
 - **Correlation analysis**: Heatmaps and clustermaps revealing relationships between different graph-theoretical measures
 - **Comparative analysis**: Side-by-side visualizations enabling direct comparison of multiple neuronal circuit configurations
 
@@ -290,39 +290,39 @@ Each subplot presents a comprehensive multivariate PairGrid visualization showin
 
 **Figure 6**: Statistical Comparison of Centrality Metrics Across Weighted Neuronal Circuit Models
 
-This figure presents three complementary statistical visualizations for each weighted neuronal circuit model, enabling comprehensive comparison of centrality metric distributions and inter-metric relationships. Box plots reveal distribution characteristics including medians, quartiles, and outliers. Violin plots display full probability density distributions, highlighting multimodal patterns and distribution shapes. Correlation heatmaps quantify pairwise relationships between all nine centrality metrics, revealing strong positive correlations consistent with theoretical expectations for structurally weighted networks.
+This figure presents three complementary statistical visualizations for each weighted neuronal circuit model, enabling comprehensive comparison of centrality metric distributions and inter-metric relationships. Box plots reveal distribution characteristics including medians, quartiles, and outliers. Strip plots display individual data points with jitter, highlighting the actual distribution of values and identifying potential outliers or clustering patterns. Correlation heatmaps quantify pairwise relationships between all nine centrality metrics, revealing strong positive correlations consistent with theoretical expectations for structurally weighted networks.
 
 ### TC2PT Model
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 20px 0;">
 <img src="results_weighted/TC2PT_box.png" alt="TC2PT Box Plot" style="width: 30%; height: auto;">
-<img src="results_weighted/TC2PT_violin.png" alt="TC2PT Violin Plot" style="width: 30%; height: auto;">
+<img src="results_weighted/TC2PT_strip.png" alt="TC2PT Strip Plot" style="width: 30%; height: auto;">
 <img src="results_weighted/TC2PT_corr_heatmap.png" alt="TC2PT Correlation Heatmap" style="width: 30%; height: auto;">
 </div>
-<p style="font-size: 0.85em; text-align: center;">Box plot, violin plot, and correlation heatmap for TC2PT weighted network showing enhanced metric variation and strong inter-metric correlations.</p>
+<p style="font-size: 0.85em; text-align: center;">Box plot, strip plot, and correlation heatmap for TC2PT weighted network showing enhanced metric variation and strong inter-metric correlations.</p>
 
 ### TC2CT Model  
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 20px 0;">
 <img src="results_weighted/TC2CT_box.png" alt="TC2CT Box Plot" style="width: 30%; height: auto;">
-<img src="results_weighted/TC2CT_violin.png" alt="TC2CT Violin Plot" style="width: 30%; height: auto;">
+<img src="results_weighted/TC2CT_strip.png" alt="TC2CT Strip Plot" style="width: 30%; height: auto;">
 <img src="results_weighted/TC2CT_corr_heatmap.png" alt="TC2CT Correlation Heatmap" style="width: 30%; height: auto;">
 </div>
-<p style="font-size: 0.85em; text-align: center;">Box plot, violin plot, and correlation heatmap for TC2CT weighted network demonstrating comprehensive coverage of 8/9 centrality metrics.</p>
+<p style="font-size: 0.85em; text-align: center;">Box plot, strip plot, and correlation heatmap for TC2CT weighted network demonstrating comprehensive coverage of 8/9 centrality metrics.</p>
 
 ### TC2IT2PTCT Model
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 20px 0;">
 <img src="results_weighted/TC2IT2PTCT_box.png" alt="TC2IT2PTCT Box Plot" style="width: 30%; height: auto;">
-<img src="results_weighted/TC2IT2PTCT_violin.png" alt="TC2IT2PTCT Violin Plot" style="width: 30%; height: auto;">
+<img src="results_weighted/TC2IT2PTCT_strip.png" alt="TC2IT2PTCT Strip Plot" style="width: 30%; height: auto;">
 <img src="results_weighted/TC2IT2PTCT_corr_heatmap.png" alt="TC2IT2PTCT Correlation Heatmap" style="width: 30%; height: auto;">
 </div>
-<p style="font-size: 0.85em; text-align: center;">Box plot, violin plot, and correlation heatmap for TC2IT2PTCT weighted network showing rich distribution patterns across complex multi-layer architecture.</p>
+<p style="font-size: 0.85em; text-align: center;">Box plot, strip plot, and correlation heatmap for TC2IT2PTCT weighted network showing rich distribution patterns across complex multi-layer architecture.</p>
 
 ### TC2IT4_IT2CT Model
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 20px 0;">
 <img src="results_weighted/TC2IT4_IT2CT_box.png" alt="TC2IT4_IT2CT Box Plot" style="width: 30%; height: auto;">
-<img src="results_weighted/TC2IT4_IT2CT_violin.png" alt="TC2IT4_IT2CT Violin Plot" style="width: 30%; height: auto;">
+<img src="results_weighted/TC2IT4_IT2CT_strip.png" alt="TC2IT4_IT2CT Strip Plot" style="width: 30%; height: auto;">
 <img src="results_weighted/TC2IT4_IT2CT_corr_heatmap.png" alt="TC2IT4_IT2CT Correlation Heatmap" style="width: 30%; height: auto;">
 </div>
-<p style="font-size: 0.85em; text-align: center;">Box plot, violin plot, and correlation heatmap for TC2IT4_IT2CT weighted network revealing detailed centrality patterns in layer 4 intratelencephalic pathways.</p>
+<p style="font-size: 0.85em; text-align: center;">Box plot, strip plot, and correlation heatmap for TC2IT4_IT2CT weighted network revealing detailed distribution characteristics across layer 4 intratelencephalic pathways.</p>
 
 These statistical visualizations confirm that structural weighting successfully transforms discrete, binary centrality outputs into continuous distributions suitable for rigorous statistical analysis, enabling meaningful comparisons across diverse neuronal circuit architectures.
 
@@ -333,7 +333,7 @@ These statistical visualizations confirm that structural weighting successfully 
 | Task | Local Execution (s) | MyBinder Execution (s) |
 |------|---------------------|------------------------|
 | Network topology plot | 2.3 ± 0.4 | 4.1 ± 0.8 |
-| Violin plot generation | 1.1 ± 0.2 | 1.8 ± 0.3 |
+| strip plot generation | 1.1 ± 0.2 | 1.8 ± 0.3 |
 | Correlation heatmap | 0.8 ± 0.1 | 1.4 ± 0.2 |
 | Animated GIF creation | 15.2 ± 2.1 | 28.7 ± 4.3 |
 
@@ -422,7 +422,7 @@ The complete implementation is available at https://github.com/trernghwhuare/met
 #### Visualization Components
 
 - **[Network_Metrics_Analysis.ipynb](file:///home/leo520/my/metrics-analysis-project/Network_Metrics_Analysis.ipynb)**: Interactive notebook demonstrating neuronal circuit visualization capabilities
-- **network_metrics_package/plotting/**: Modular plotting functions for violin plots, box plots, heatmaps, and clustermaps
+- **network_metrics_package/plotting/**: Modular plotting functions for strip plots, box plots, heatmaps, and clustermaps
 - **results/**: Directory for storing generated visualizations (images, GIFs, and interactive outputs)
 
 #### MyBinder Configuration
@@ -457,7 +457,7 @@ pixi run analyze
 1. **Load neuronal circuit data** in supported formats (adjacency matrices, edge lists, or graph-tool native formats)
 2. **Compute network metrics** using the comprehensive suite of graph-theoretical measures
 3. **Generate static visualizations** using built-in plotting functions:
-   - `plot_violin()`: Distribution comparisons across circuit models
+   - `plot_strip()`: Distribution comparisons across circuit models
    - `plot_box()`: Statistical summaries of network properties  
    - `plot_heatmap_corr()`: Correlation matrices between metrics
    - `plot_clustermap()`: Hierarchical clustering of circuit properties

@@ -1,16 +1,4 @@
-# MyST build outputs
-_build
-*.net.nml
-build/
-
-# Generated results and metrics
-results/
-results_weighted/
-metrics_out_*/
-test_output_fixed/
-gt_plots/
-
-# Python cache and compiled files
+# Python cache and bytecode
 __pycache__/
 *.pyc
 *.pyo
@@ -21,6 +9,29 @@ venv/
 .venv/
 pip-log.txt
 pip-delete-this-directory.txt
+lib/
+lib64/
+parts/
+sdist/
+var/
+.installed.cfg
+*.egg
+
+# Python build and distribution
+build/
+develop-eggs/
+dist/
+*.egg-info/
+
+# Generated output directories
+metrics_out/
+plots/
+test_output/
+results/
+results_weighted/
+metrics_out_*/
+test_output_fixed/
+gt_plots/
 
 # Node.js
 node_modules/
@@ -30,8 +41,7 @@ yarn-error.log*
 package-lock.json
 package.json
 
-# Distribution / packaging
-dist/
+# Testing and coverage
 .coverage
 .htmlcov/
 .tox/
@@ -39,7 +49,7 @@ dist/
 .cache
 .pytest_cache/
 
-# IDE
+# IDE and editors
 .vscode/
 .idea/
 *.swp
@@ -48,5 +58,6 @@ dist/
 # pixi
 pixi.lock
 
-# Egg info
-*.egg-info/
+# OS
+.DS_Store
+Thumbs.db

@@ -18,20 +18,18 @@ sns.set(style="whitegrid")
 
 def load_metrics(npz_path):
     data = np.load(npz_path)
-    return {k: data[k] for k in data.files}
+    # Create writeable copies of all arrays to avoid read-only issues
+    return {k: np.array(data[k], copy=True) for k in data.files}
 
 
-def plot_violin(metrics_dict, metric_names=None, title="Metric correlation", out=None, figsize=(10,8)):
+def plot_strip(metrics_dict, metric_names=None, title="Metric correlation", out=None, figsize=(10,8)):
+    """
+    Create strip plots (scatter plots) for network metrics.
+    Strip plots are better suited for sparse, skewed data with many zeros.
+    """
     if metric_names is None:
         metric_names = list(metrics_dict.keys())
-        
-    def adjacent_values(vals, q1, q3):
-        upper_adjacent_value = q3 + (q3 - q1) * 1.5
-        upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
-        lower_adjacent_value = q1 - (q3 - q1) * 1.5
-        lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
-        return lower_adjacent_value, upper_adjacent_value
-        
+    
     def set_axis_style(ax, labels):
         ax.set_xticks(np.arange(1, len(labels) + 1), labels=labels)
         ax.set_xlim(0.25, len(labels) + 0.75)
@@ -74,10 +72,10 @@ def plot_violin(metrics_dict, metric_names=None, title="Metric correlation", out
     
     # Check if we have any valid metrics
     if not valid_metric_names:
-        print("No valid data for violin plot")
+        print("No valid data for strip plot")
         return
     
-    # Prepare data for violin plot - ensure each dataset is a proper 1D array
+    # Prepare data for strip plot - ensure each dataset is a proper 1D array
     data_list = []
     for name in valid_metric_names:
         metric_data = valid_metrics[name]
@@ -95,79 +93,19 @@ def plot_violin(metrics_dict, metric_names=None, title="Metric correlation", out
     
     # If no data left after filtering, exit
     if not data_list:
-        print("No valid finite data for violin plot")
+        print("No valid finite data for strip plot")
         return
-    
-    # Check if we should use log scale based on data range
-    try:
-        all_data = np.concatenate(data_list)
-        use_log = (np.max(all_data) / np.min(all_data[np.nonzero(all_data)])) > 100 if np.any(all_data != 0) else False
-    except:
-        use_log = False
 
     fig, ax = plt.subplots(figsize=figsize)
     
-    if use_log:
-        # Apply log transform to positive data only
-        log_data_list = []
-        for d in data_list:
-            d_pos = d[d > 0]
-            if len(d_pos) > 0:
-                log_data_list.append(np.log10(d_pos))
-            else:
-                log_data_list.append(np.array([]))
-        
-        # Remove empty arrays
-        filtered_log_data_list = [d for d in log_data_list if len(d) > 0]
-        filtered_labels = [valid_metric_names[i] for i, d in enumerate(log_data_list) if len(d) > 0]
-        
-        if not filtered_log_data_list:
-            print("No positive data for log-scale violin plot")
-            plt.close(fig)
-            return
-            
-        parts = ax.violinplot(filtered_log_data_list, showmeans=False, showmedians=False, showextrema=False)
-        
-        # Customize violins
-        for pc in parts['bodies']:
-            pc.set_facecolor('#D43F3A')
-            pc.set_edgecolor('black')
-            pc.set_alpha(1)
-            
-        # Add quartiles and medians
-        quartile1 = [np.percentile(d, 25) for d in filtered_log_data_list]
-        medians = [np.percentile(d, 50) for d in filtered_log_data_list]
-        quartile3 = [np.percentile(d, 75) for d in filtered_log_data_list]
-        
-        inds = np.arange(1, len(medians) + 1)
-        ax.scatter(inds, medians, marker='o', color='white', s=30, zorder=3)
-        ax.vlines(inds, quartile1, quartile3, color='k', linestyle='-', lw=5)
-        
-        # Set log scale labels
-        ax.set_xticks(inds)
-        ax.set_xticklabels(filtered_labels, rotation=45, ha='right')
-        ax.set_ylabel('log10(Value)')
-        
-    else:
-        parts = ax.violinplot(data_list, showmeans=False, showmedians=False, showextrema=False)
-        
-        # Customize violins
-        for pc in parts['bodies']:
-            pc.set_facecolor('#D43F3A')
-            pc.set_edgecolor('black')
-            pc.set_alpha(1)
-            
-        # Add quartiles and medians
-        quartile1 = [np.percentile(d, 25) for d in data_list]
-        medians = [np.percentile(d, 50) for d in data_list]
-        quartile3 = [np.percentile(d, 75) for d in data_list]
-        
-        inds = np.arange(1, len(medians) + 1)
-        ax.scatter(inds, medians, marker='o', color='white', s=30, zorder=3)
-        ax.vlines(inds, quartile1, quartile3, color='k', linestyle='-', lw=5)
-        
-        set_axis_style(ax, valid_metric_names)
+    # Create strip plot (scatter plot) for each metric
+    for i, (data, label) in enumerate(zip(data_list, valid_metric_names)):
+        x_positions = np.full(len(data), i + 1)
+        # Add small random jitter to x positions to avoid overlapping points
+        x_jitter = x_positions + np.random.normal(0, 0.05, len(x_positions))
+        ax.scatter(x_jitter, data, alpha=0.6, s=10, color='#D43F3A', edgecolors='black', linewidth=0.5)
     
+    set_axis_style(ax, valid_metric_names)
     ax.set_title(title)
     plt.tight_layout()
     if out:
@@ -179,7 +117,6 @@ def plot_box(metrics_dict, metric_names=None, title="Metric Box Plot", out=None,
     if metric_names is None:
         metric_names = list(metrics_dict.keys())
     
-    # Similar data processing as violin plot
     valid_metrics = {}
     valid_metric_names = []
     
@@ -310,23 +247,38 @@ def plot_clustermap(metrics_dict, metric_names=None, title="Metric Clustermap", 
         print("No valid rows for clustermap")
         return
     
+    # Create a completely new DataFrame with writeable arrays to avoid read-only issues
+    df_writeable = pd.DataFrame()
+    for col in df.columns:
+        # Ensure each column is a writeable numpy array
+        col_data = np.array(df[col].values, copy=True)
+        col_data.flags.writeable = True
+        df_writeable[col] = col_data
+    
     # Compute correlation matrix, handling NaN values
     corr = df.corr(method='spearman')
     corr = corr.replace([np.inf, -np.inf], np.nan).fillna(0.0)
     
     # Ensure the correlation matrix is symmetric
     corr = (corr + corr.T) / 2.0
-    np.fill_diagonal(corr.values, 1.0)
+    
+    # Make sure the correlation matrix values are writeable before filling diagonal
+    corr_values = np.array(corr.values, copy=True)
+    corr_values.flags.writeable = True
+    np.fill_diagonal(corr_values, 1.0)
+    
+    # Create a new DataFrame with the fixed values
+    corr_fixed = pd.DataFrame(corr_values, index=corr.index, columns=corr.columns)
     
     try:
-        cg = sns.clustermap(corr, cmap="vlag", figsize=figsize, annot=True)
+        cg = sns.clustermap(corr_fixed, cmap="vlag", figsize=figsize, annot=True)
         plt.suptitle(title)
         if out:
             cg.savefig(out)
             plt.close()
     except Exception as e:
         plt.figure(figsize=figsize)
-        sns.heatmap(corr, annot=True, cmap="vlag", center=0)
+        sns.heatmap(corr_fixed, annot=True, cmap="vlag", center=0)
         plt.title(title + " (fallback heatmap)")
         if out:
             plt.savefig(out)
@@ -433,10 +385,10 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
     out_dir : str
         Output directory for plots
     plots : list or None
-        List of plot types to generate: ['violin', 'box', 'heatmap', 'clustermap', 'facetgrid']
+        List of plot types to generate: ['strip', 'box', 'heatmap', 'clustermap', 'facetgrid']
     """
     if plots is None:
-        plots = ["violin", "box", "heatmap", "clustermap"]
+        plots = ["strip", "box", "heatmap", "clustermap"]
     
     if npz_path is None:
         # Process all .npz files in metrics_out directory
@@ -460,11 +412,11 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
                 print(f"Error loading metrics from {npz_path}: {e}")
                 continue
                 
-            if "violin" in plots:
+            if "strip" in plots: 
                 try:
-                    plot_violin(metrics, out=os.path.join(out_dir, f"{base_name}_violin.png"))
+                    plot_strip(metrics, out=os.path.join(out_dir, f"{base_name}_strip.png"))
                 except Exception as e:
-                    print(f"Error creating violin plot for {base_name}: {e}")
+                    print(f"Error creating strip plot for {base_name}: {e}")
             if "box" in plots:
                 try:
                     plot_box(metrics, out=os.path.join(out_dir, f"{base_name}_box.png"))
@@ -494,11 +446,11 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
             print(f"Error loading metrics from {npz_path}: {e}")
             return
             
-        if "violin" in plots:
+        if "strip" in plots:
             try:
-                plot_violin(metrics, out=os.path.join(out_dir, f"{base_name}_violin.png"))
+                plot_strip(metrics, out=os.path.join(out_dir, f"{base_name}_strip.png"))
             except Exception as e:
-                print(f"Error creating violin plot for {base_name}: {e}")
+                print(f"Error creating strip plot for {base_name}: {e}")
         if "box" in plots:
             try:
                 plot_box(metrics, out=os.path.join(out_dir, f"{base_name}_box.png"))
@@ -524,6 +476,6 @@ def main(npz_path=None, out_dir="metrics_out", plots=None):
 if __name__ == "__main__":
     # simple CLI: set METRICS_NPZ and comma-separated PLOTS env vars or edit defaults here
     npz = os.environ.get("METRICS_NPZ", None)
-    plots_env = os.environ.get("PLOTS", "violin,box,heatmap,clustermap,facetgrid")
+    plots_env = os.environ.get("PLOTS", "strip,box,heatmap,clustermap,facetgrid")
     plots_list = [p.strip() for p in plots_env.split(",") if p.strip()]
     main(npz_path=npz, out_dir="metrics_out", plots=plots_list)

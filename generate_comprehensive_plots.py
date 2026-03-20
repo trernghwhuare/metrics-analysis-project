@@ -12,7 +12,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 def plot_individual_joint_plots(aligned_degrees, aligned_metric_arrays, base_name, out_dir="."):
@@ -185,7 +184,7 @@ def plot_multivariate_metrics(metrics_data, metric_names, base_name, out_dir="."
                     sns.scatterplot(x=x, y=y, **kwargs)
                 else:
                     # Use KDE for data with sufficient variation
-                    sns.kdeplot(x=x, y=y, fill=True, alpha=0.7, warn_singular=False, **kwargs)
+                    sns.kdeplot(x=x, y=y, fill=False, alpha=0.7, warn_singular=False, **kwargs)
             except Exception as e:
                 # Fall back to scatter plot if KDE fails
                 logging.warning(f"KDE failed, using scatter plot: {e}")
@@ -193,7 +192,21 @@ def plot_multivariate_metrics(metrics_data, metric_names, base_name, out_dir="."
         
         g.map_upper(safe_kdeplot)
         g.map_lower(safe_kdeplot)
-        g.map_diag(sns.histplot, element="step", linewidth=2, kde=True)
+        
+        # Enhanced diagonal plots with distinct colors and improved clarity
+        colors = sns.color_palette("husl", len(valid_columns))
+        for i, col in enumerate(valid_columns):
+            def diag_plot(x, color=None, label=None, **kwargs):
+                # Use distinct color for each histogram
+                hist_color = colors[i] if i < len(colors) else None
+                sns.histplot(x=x, element="step", linewidth=2, kde=True, 
+                           color=hist_color, alpha=0.7, **kwargs)
+            
+            g.axes[i, i].clear()
+            valid_data = df_valid[col].dropna()
+            if len(valid_data) > 0:
+                diag_plot(valid_data)
+                g.axes[i, i].set_title(col, fontsize=10, fontweight='bold')
         
         g.fig.suptitle(f"Multivariate View of Centrality Metrics - {base_name}", y=1.02)
         plt.tight_layout()
@@ -294,8 +307,9 @@ def main():
         return
     
     generate_all_plots_simple(degrees, metrics, base_name, args.output_dir)
-    logging.info(f"All plots generated successfully in {args.output_dir}/")
-
+    # Resolve the actual output directory path for clearer logging
+    resolved_output_dir = os.path.abspath(args.output_dir)
+    logging.info(f"All plots generated successfully in {resolved_output_dir}/")
 
 
 if __name__ == "__main__":

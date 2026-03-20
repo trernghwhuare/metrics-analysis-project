@@ -6,7 +6,7 @@ from .metrics.generator import compute_and_save_metrics
 from .metrics.utils import sanitize_array, minmax_normalize, analyze_network_structure
 from .plotting.compare_plots import (
     load_metrics,
-    plot_violin,
+    plot_strip,
     plot_box,
     plot_heatmap_corr,
     plot_clustermap,
@@ -23,7 +23,7 @@ __all__ = [
     'minmax_normalize',
     'analyze_network_structure',
     'load_metrics',
-    'plot_violin',
+    'plot_strip',
     'plot_box', 
     'plot_heatmap_corr',
     'plot_clustermap',

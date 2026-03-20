@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate proper comparison plots (box, violin, heatmap, clustermap) for real neuronal circuit models.
+Generate proper comparison plots (box, strip, heatmap, clustermap) for real neuronal circuit models.
 This script should be run with: PYTHONPATH=/home/leo520/my/metrics-analysis-project/src pixi run python generate_real_comparison_plots.py
 """
 
@@ -15,11 +15,11 @@ if src_dir not in sys.path:
     sys.path.insert(0, src_dir)
 
 from network_metrics_package.plotting.compare_plots import (
-    load_metrics, plot_violin, plot_box, plot_heatmap_corr, plot_clustermap
+    load_metrics, plot_strip, plot_box, plot_heatmap_corr
 )
 
 def generate_comparison_plots_for_network(npz_file, output_dir="results"):
-    """Generate box, violin, heatmap, and clustermap plots for a single network."""
+    """Generate box, strip, heatmap, and clustermap plots for a single network."""
     os.makedirs(output_dir, exist_ok=True)
     
     # Load metrics from NPZ file
@@ -36,57 +36,32 @@ def generate_comparison_plots_for_network(npz_file, output_dir="results"):
     plot_box(metrics, out=box_file)
     print(f"  Box plot saved to {box_file}")
     
-    # Violin plot  
-    violin_file = os.path.join(output_dir, f"{base_name}_violin.png")
-    plot_violin(metrics, out=violin_file)
-    print(f"  Violin plot saved to {violin_file}")
+    # Strip plot (replacing violin plot)
+    strip_file = os.path.join(output_dir, f"{base_name}_strip.png")
+    plot_strip(metrics, out=strip_file)
+    print(f"  Strip plot saved to {strip_file}")
     
     # Correlation heatmap
     heatmap_file = os.path.join(output_dir, f"{base_name}_corr_heatmap.png")
     plot_heatmap_corr(metrics, out=heatmap_file)
     print(f"  Correlation heatmap saved to {heatmap_file}")
     
-    # Clustermap (only if we have enough valid metrics)
-    try:
-        clustermap_file = os.path.join(output_dir, f"{base_name}_clustermap.png")
-        plot_clustermap(metrics, out=clustermap_file)
-        print(f"  Clustermap saved to {clustermap_file}")
-    except Exception as e:
-        print(f"  Warning: Could not generate clustermap for {base_name}: {e}")
-    
-    return {
-        'box': box_file,
-        'violin': violin_file, 
-        'heatmap': heatmap_file,
-        'clustermap': clustermap_file if 'clustermap_file' in locals() else None
-    }
 
 def main():
-    """Generate comparison plots for all four real neuronal circuit models."""
-    networks = [
-        "metrics_out/TC2CT_metrics.npz",
-        "metrics_out/TC2IT2PTCT_metrics.npz", 
-        "metrics_out/TC2IT4_IT2CT_metrics.npz",
-        "metrics_out/TC2PT_metrics.npz"
-    ]
+    """Generate comparison plots for all networks in metrics_out directory."""
+    metrics_dir = "metrics_out"
+    output_dir = "results"
     
-    all_plots = {}
+    # Get all NPZ files
+    npz_files = [f for f in os.listdir(metrics_dir) if f.endswith('.npz')]
     
-    for network_file in networks:
-        if os.path.exists(network_file):
-            plots = generate_comparison_plots_for_network(network_file, "results")
-            network_name = os.path.splitext(os.path.basename(network_file))[0].replace('_metrics', '')
-            all_plots[network_name] = plots
-        else:
-            print(f"Warning: {network_file} not found")
+    if not npz_files:
+        print(f"No NPZ files found in {metrics_dir}")
+        return
     
-    print("\nAll comparison plots generated successfully!")
-    print("Files are available in the 'results/' directory:")
-    for network, plots in all_plots.items():
-        print(f"\n{network}:")
-        for plot_type, plot_file in plots.items():
-            if plot_file and os.path.exists(plot_file):
-                print(f"  {plot_type}: {os.path.basename(plot_file)}")
+    for npz_file in npz_files:
+        full_path = os.path.join(metrics_dir, npz_file)
+        generate_comparison_plots_for_network(full_path, output_dir)
 
 if __name__ == "__main__":
     main()
