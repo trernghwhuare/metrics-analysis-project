@@ -1,2 +1,0 @@
-[console_scripts]
-analyze-network-metrics = network_metrics_package.main:main

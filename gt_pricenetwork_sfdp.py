@@ -2,10 +2,16 @@
 import os
 import sys
 import time
+# Add the network_metrics_package directory to sys.path for local imports
+script_dir = os.path.dirname(os.path.abspath(__file__))
+network_metrics_path = os.path.join(script_dir, "src", "network_metrics_package")
+if network_metrics_path not in sys.path:
+    sys.path.insert(0, network_metrics_path)
+
 os.environ['GDK_BACKEND'] = 'broadway'
 os.environ['GSK_RENDERER'] = 'cairo'
 os.environ["OMP_WAIT_POLICY"] = "active"
-os.environ["OMP_NUM_THREADS"] = "12"
+os.environ["OMP_NUM_THREADS"] = "8"
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')  
@@ -13,7 +19,7 @@ import matplotlib.pyplot as plt
 plt.switch_backend("cairo")
 from collections import defaultdict
 from tqdm import tqdm
-import xml.etree.ElementTree as ET
+from numpy.linalg import norm
 import json
 import gc
 import random
@@ -27,7 +33,6 @@ gi.require_version('Gtk', '3.0')
 # from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, GLib
 from graph_tool.all import *
 import graph_tool.all as gt
-from tqdm import tqdm
 import time
 import logging
 import gc
@@ -144,19 +149,24 @@ def get_gen_type(ilist_id):
 
 def visualize_network(nml_net_file, p_intra, p_inter, base_name):
     # Create output directory if it doesn't exist
-    output_dir = f"gt_plots/{base_name}"
+    output_dir = f"centrality/{base_name}"
     os.makedirs(output_dir, exist_ok=True)
     
     nml_doc = read_neuroml2_file(nml_net_file)
-    G = price_network(len(nml_doc.networks[0].populations) + len(nml_doc.networks[0].input_lists), directed=True)
-    vprop_name = G.new_vertex_property("string")
-    vprop_type = G.new_vertex_property("string")
-    vprop_size = G.new_vertex_property("double")
-    eprop_name = G.new_edge_property("string")
-    eprop_type = G.new_edge_property("string")
-    eprop_width = G.new_edge_property("double")
-    eprop_color = G.new_edge_property("vector<double>")
-    eprop_dash = G.new_edge_property("vector<double>")
+    G = price_network(len(nml_doc.networks[0].populations) 
+                      + len(nml_doc.pulse_generators) 
+                      + len(nml_doc.compound_inputs) 
+                      + len(nml_doc.voltage_clamp_triples), 
+                      directed=True)
+    
+    vprop_name = G.new_vp("string")
+    vprop_type = G.new_vp("string")
+    vprop_size = G.new_vp("double")
+    eprop_name = G.new_ep("string")
+    eprop_type = G.new_ep("string")
+    eprop_width = G.new_ep("double")
+    eprop_color = G.new_ep("vector<double>")
+    eprop_dash = G.new_ep("vector<double>")
 
     try:
         # Step 1: Create vertices using population properties
@@ -177,50 +187,49 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         logging.info(f"Detected {len(pop_map)} pop vertices from {base_name} status : %s", pop_type_stats)
         logging.info(f"pop_states: %s", pop_states)
 
-        input_map = {}
-        input_type_stats = {}
-        input_states = {}
-        if hasattr(nml_doc, 'pulse_generators') and nml_doc.pulse_generators:
-            for pg in nml_doc.pulse_generators:
-                v2 = G.add_vertex()
-                vprop_name[v2] = pg.id
-                vertex_type = get_gen_type(pg.id)
-                pg_type = get_input_type(pg.id)
-                vprop_type[v2] = pg_type  # Use consistent type identifier
-                vprop_size[v2] = 2
-                input_map[pg.id] = v2
-                input_states[vertex_type] = input_states.get(vertex_type, 0) + 1
-                input_type_stats[pg_type] = input_type_stats.get(pg_type, 0) + 1
-        if hasattr(nml_doc, 'compound_inputs') and nml_doc.compound_inputs:
-            for ci in nml_doc.compound_inputs:
-                v3 = G.add_vertex()
-                vprop_name[v3] = ci.id
-                vertex_type = get_gen_type(ci.id)
-                ci_type = get_input_type(ci.id)
-                vprop_type[v3] = ci_type  # Use consistent type identifier
-                vprop_size[v3] = 2
-                input_map[ci.id] = v3
-                input_states[vertex_type] = input_states.get(vertex_type, 0) + 1
-                input_type_stats[ci_type] = input_type_stats.get(ci_type, 0) + 1  
-        
-        if hasattr(nml_doc, 'voltage_clamp_triples') and nml_doc.voltage_clamp_triples:
-            for vc in nml_doc.voltage_clamp_triples:
-                v4 = G.add_vertex()
-                vprop_name[v4] = vc.id
-                vertex_type = get_gen_type(vc.id)
-                vc_type = get_input_type(vc.id)
-                vprop_type[v4] = vc_type
-                vprop_size[v4] = 2
-                input_map[vc.id] = v4
-                input_states[vertex_type] = input_states.get(vertex_type, 0) + 1
-                input_type_stats[vc_type] = input_type_stats.get(vc_type, 0) + 1
-        logging.info(f"Detected {len(input_map)} input vertices type breakdown : %s", input_type_stats)
-        logging.info(f"input_states: %s", input_states)
+        group_keys = []
+        for v in G.vertices():
+            pop_id = vprop_name[v]
+            pop_type = get_pop_type(pop.id)
+            if vprop_name[v] != pop_id:
+                ilist_id = vprop_name[v]
+                input_type = get_input_type(ilist_id)
+                if isinstance(ilist_id, str): 
+                    gkey = ilist_id.replace(f"{input_type}_", "")
+                else:
+                    gkey = pop_id
+                gkey = pop_id
+                group_keys.append(gkey)
+            
+        unique_groups = sorted(dict.fromkeys(group_keys).keys())
+        group_pos = {g: i for i, g in enumerate(unique_groups)}
+        vprop_group = G.new_vp("int")
+        for v, gkey in zip(G.vertices(),group_keys):
+            vprop_group[v] = group_pos.get(gkey, 0)
 
         # Step 2: Add edges with different types
         edge_count = {'continuous': 0, 'electrical': 0}
-        edge_type = G.new_edge_property("string")  # New property for edge types
-        edge_weight = G.new_edge_property("double")
+        edge_type = G.new_ep("string")  # New property for edge types
+        edge_weight = G.new_ep("double")
+
+        # Step 3: Community detection first
+        state = gt.minimize_nested_blockmodel_dl(G, state_args=dict(overlap=True))
+        gt.mcmc_anneal(state, beta_range=(1, 10), niter=1000, mcmc_equilibrate_args=dict(force_niter=10))
+        
+        tree, prop, vprop = gt.get_hierarchy_tree(state)
+        ecount = tree.num_edges()
+        vcount = tree.num_vertices()
+        print(f"Tree has {vcount} vertices and {ecount} edges")
+        
+        levels = state.get_levels() # Get the hierarchy levels
+        print(f"Detected {len(levels)} hierarchy levels")
+        for s in levels:
+            print(s)
+            if s.get_N() == 1:
+                break
+        b = levels[0].get_blocks()
+        Vprefixs = set(get_Vprefix(vprop_name[v]) for v in G.vertices())
+        logging.info(f"Vprefixs: {Vprefixs}")
 
         for Syn_proj in nml_doc.networks[0].continuous_projections:
             src = Syn_proj.presynaptic_population
@@ -264,16 +273,70 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                     edge_count['electrical'] += 1 
         logging.info(f"Added {edge_count['electrical']} elect_proj edges")
 
-        intra = 0
-        inter = 0
+        V_intra = 0
+        V_inter = 0
+        R_intra = 0
+        R_inter = 0
+        L_intra = 0
+        L_inter = 0
         for e in G.edges():
             pre = vprop_name[e.source()]
             post = vprop_name[e.target()]
             if get_Vprefix(pre) == get_Vprefix(post):
-                intra += 1
+                V_intra += 1
             else:
-                inter += 1
-        print(f"Intra Vprefix-edges: {intra}, Inter Vprefix-edges: {inter}")
+                V_inter += 1
+            if get_Region(pre) == get_Region(post):
+                R_intra += 1
+            else:
+                R_inter += 1
+            if get_layer(pre) == get_layer(post):
+                L_intra += 1
+            else:
+                L_inter += 1
+        logging.info(f"Intra Vprefix-edges: {V_intra}, Inter Vprefix-edges: {V_inter}")
+        logging.info(f"Intra Region-edges: {R_intra}, Inter Region-edges: {R_inter}")
+        logging.info(f"Intra layer-edges: {L_intra}, Inter layer-edges: {L_inter}")
+        #--------------------------------------------------------------------#
+        input_map = {}
+        input_type_stats = {}
+        input_states = {}
+        if hasattr(nml_doc, 'pulse_generators') and nml_doc.pulse_generators:
+            for pg in nml_doc.pulse_generators:
+                v2 = G.add_vertex()
+                vprop_name[v2] = pg.id
+                vertex_type = get_gen_type(pg.id)
+                pg_type = get_input_type(pg.id)
+                vprop_type[v2] = pg_type  # Use consistent type identifier
+                vprop_size[v2] = np.log1p(len(pg.id))
+                input_map[pg.id] = v2
+                input_states[vertex_type] = input_states.get(vertex_type, 0) + 1
+                input_type_stats[pg_type] = input_type_stats.get(pg_type, 0) + 1
+        if hasattr(nml_doc, 'compound_inputs') and nml_doc.compound_inputs:
+            for ci in nml_doc.compound_inputs:
+                v3 = G.add_vertex()
+                vprop_name[v3] = ci.id
+                vertex_type = get_gen_type(ci.id)
+                ci_type = get_input_type(ci.id)
+                vprop_type[v3] = ci_type  # Use consistent type identifier
+                vprop_size[v3] = np.log1p(len(ci.id))
+                input_map[ci.id] = v3
+                input_states[vertex_type] = input_states.get(vertex_type, 0) + 1
+                input_type_stats[ci_type] = input_type_stats.get(ci_type, 0) + 1  
+        
+        if hasattr(nml_doc, 'voltage_clamp_triples') and nml_doc.voltage_clamp_triples:
+            for vc in nml_doc.voltage_clamp_triples:
+                v4 = G.add_vertex()
+                vprop_name[v4] = vc.id
+                vertex_type = get_gen_type(vc.id)
+                vc_type = get_input_type(vc.id)
+                vprop_type[v4] = vc_type
+                vprop_size[v4] = np.log1p(len(vc.id))
+                input_map[vc.id] = v4
+                input_states[vertex_type] = input_states.get(vertex_type, 0) + 1
+                input_type_stats[vc_type] = input_type_stats.get(vc_type, 0) + 1
+        logging.info(f"Detected {len(input_map)} input vertices type breakdown : %s", input_type_stats)
+        logging.info(f"input_states: %s", input_states)
 
         # Process input edges
         input_edges = {'exc_input': 0, 'inh_input': 0}
@@ -348,52 +411,51 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         # Log detailed statistics
         logging.info("Destination breakdown: %s", destination_stats)
         logging.info("Detected %d input edges: %d exc | %d inh", total_input_edges, input_edges['exc_input'], input_edges['inh_input'])
-
-        # Step 3: Community detection first
-        state = gt.minimize_nested_blockmodel_dl(G, state_args=dict(overlap=True))
-        gt.mcmc_anneal(state, beta_range=(1, 10), niter=1000, mcmc_equilibrate_args=dict(force_niter=10))
-        
-        tree, prop, vprop = gt.get_hierarchy_tree(state)
-        ecount = tree.num_edges()
-        vcount = tree.num_vertices()
-        print(f"Tree has {vcount} vertices and {ecount} edges")
-        
-        levels = state.get_levels() # Get the hierarchy levels
-        print(f"Detected {len(levels)} hierarchy levels")
-        
-        b = levels[0].get_blocks() # Get block structure from highest level
-        Vprefixs = set(get_Vprefix(vprop_name[v]) for v in G.vertices())
-        logging.info(f"Vprefixs: {Vprefixs}")
-        
+        #--------------------------------------------------------------------#
         main_vertices = [v for v in G.vertices() if vprop_name[v] in pop_map.keys()]
         main_edges = [e for e in G.edges() if e.source() in main_vertices and e.target() in main_vertices]
-        # G_main = gt.GraphView(G, vfilt=lambda v: v in main_vertices, efilt=lambda e: e in main_edges)
-        # state_ndc_main = gt.minimize_nested_blockmodel_dl(G_main, state_args=dict(deg_corr=False))
-        # state_dc_main  = gt.minimize_nested_blockmodel_dl(G_main, state_args=dict(deg_corr=True))
-        # logging.info("Block counts (ndc): %s", np.unique(state_ndc_main.get_levels()[0].get_blocks().a, return_counts=True))
-        # logging.info("Block counts (dc): %s", np.unique(state_dc_main.get_levels()[0].get_blocks().a, return_counts=True))
+        G_main = gt.GraphView(G, vfilt=lambda v: v in main_vertices, efilt=lambda e: e in main_edges)
+        logging.info("Number of main vertices: %d", G_main.num_vertices())
+        logging.info("Number of main edges: %d", G_main.num_edges())
         
-        # main_ndc_b = state_ndc_main.get_levels()[0].get_blocks()
-        # main_dc_b = state_dc_main.get_levels()[0].get_blocks()
-        # main_comm_ndc = len(set(main_ndc_b.a))
-        # main_comm_dc = len(set(main_dc_b.a))
-        # logging.info(f"main_vertices_ndc: {main_comm_ndc} communities | main_vertices_dc: {main_comm_dc} communities")
-
+        
+        input_vfilter = G.new_vertex_property("bool")
+        input_vfilter.a = False
         input_vertices = [v for v in G.vertices() if vprop_name[v] in input_map.keys()]
-        ilist_edges = [e for e in G.edges() if e.source() in input_vertices or e.target() in input_vertices]
-        # G_ilist = gt.GraphView(G, vfilt=lambda v: v in input_vertices, efilt=lambda e: e in ilist_edges)
+        for v in input_vertices:
+            input_vfilter[v] = True
+            # Also include all neighbors (targets) of input vertices
+            for w in v.out_neighbors():
+                input_vfilter[w] = True
+            for w in v.in_neighbors():
+                input_vfilter[w] = True
+                
+        # Create input edge filter property map  
+        input_efilter = G.new_edge_property("bool")
+        input_efilter.a = False
+        for e in G.edges():
+            if input_vfilter[e.source()] and input_vfilter[e.target()]:
+                if vprop_name[e.source()] in input_map.keys() or vprop_name[e.target()] in input_map.keys():
+                    input_efilter[e] = True
+        
+        G_ilist = gt.GraphView(G, vfilt=input_vfilter, efilt=input_efilter)
+        logging.info("Number of input vertices: %d", G_ilist.num_vertices())
+        logging.info("Number of input edges: %d", G_ilist.num_edges())
+        
         full_vertices = [v for v in G.vertices()]
         full_edges = [e for e in G.edges()]
-        
-
+        G = gt.GraphView(G, vfilt=lambda v: v in full_vertices, efilt=lambda e: e in full_edges)
+        logging.info("Number of total vertices: %d", G.num_vertices())
+        logging.info("Number of total edges: %d", G.num_edges())
+        #--------------------------------------------------------------------#
         # Step 4: Create proper position property map
-        pos = G.new_vertex_property("vector<double>")
+        pos = G.new_vp("vector<double>")
         G.vp["pos"] = pos
+        pos = gt.sfdp_layout(G, pos=pos, groups=vprop_group, C=4.0, K=1.0, p=2.0, gamma=0.1, theta=0.6, max_iter=1000, mu=2, weighted_coarse=True)
 
-        # Step 5: Fine-tune layout with sfdp/frl/al/rtl/pl/rl using proper position initialization
-        pos = gt.sfdp_layout(G, pos=pos, C=4.0, K=1.0, p=2.0, gamma=0.1, theta=0.6, max_iter=1000, mu=2, weighted_coarse=True)
-        # pos = gt.sfdp_layout(G, groups=vprop_group)
-        # Helper: validate/repair pos to avoid degenerate transforms
+        
+        #--------------------------------------------------------------------#
+        # Step 5: Helper---validate/repair pos to avoid degenerate transforms
         def _ensure_pos_valid(pos_prop, G, min_jitter=1e-3):
             try:
                 # build numpy array of shape (n,2)
@@ -430,6 +492,7 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                 for v in G.vertices():
                     pos_prop[v] = list(new_pos[v])
             return pos_prop
+        #--------------------------------------------------------------------#
 
         # Safe graph draw wrapper with fallback to recompute layout
         def safe_graph_draw(*args, pos_prop=None, Gref=None, retries=1, **kwargs):
@@ -456,149 +519,16 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         
         # Step 6: Draw with community colors and edge types
         #############################################################################################################################
-        # def animate_hierarchy(state, output_gif, frames=5, swee_edgess_per_frame=50, **draw_kwargs):
-        #     frame_files = []
-        #     for i in range(frames):
-        #         for j in range(swee_edgess_per_frame):
-        #             state.multiflip_mcmc_swee_edges(niter=10)
-        #         frame_file = f"gt_plots/{base_name}/{base_name}_hierarchy_frame_{i:03d}.png"
-        #         state.draw(output=frame_file, **draw_kwargs)
-        #         frame_files.append(frame_file)
-        #     # Create GIF
-        #     cmd = ["convert", "-delay", "10", "-loop", "0"] + frame_files + [output_gif]
-        #     subprocess.run(cmd, check=True)
-        #     # Clean up
-        #     for f in frame_files:
-        #         if os.path.exists(f):
-        #             os.remove(f)
-        #     gc.collect()
-
-        # state_ndc_full = gt.minimize_nested_blockmodel_dl(G_full, state_args=dict(deg_corr=False))
-        # gt.mcmc_equilibrate(state_ndc_full, wait=10, mcmc_args=dict(niter=10))
-        # for i in range(10):
-        #     for j in range(100):
-        #         state_ndc_full.multiflip_mcmc_swee_edges(niter=10)
-        # state_ndc_full.draw(
-        #     bg_color=[0.98, 0.98, 0.98, 1],
-        #     output=f"gt_plots/{base_name}/{base_name}_ndc_hierarchy.png",
-        #     empty_branches=False,
-        #     # Noneoverlapping=True,
-        # )
-        # animate_hierarchy(state_ndc_full, output_gif=f"gt_plots/{base_name}/{base_name}_ndc_hierarchy.gif",
-        #                         frames=5,
-        #                         swee_edgess_per_frame=50, bg_color=[0.98, 0.98, 0.98, 1])
-        
-        # state_dc_full  = gt.minimize_nested_blockmodel_dl(G_full, state_args=dict(deg_corr=True))
-        # gt.mcmc_equilibrate(state_dc_full, wait=10, mcmc_args=dict(niter=10))
-        # for i in range(10):
-        #     for j in range(100):
-        #         state_dc_full.multiflip_mcmc_swee_edges(niter=10)
-        # state_dc_full.draw(
-        #     bg_color=[0.98, 0.98, 0.98, 1],
-        #     output=f"gt_plots/{base_name}/{base_name}_dc_hierarchy.png",
-        #     empty_branches=False,
-        #     # Noneoverlapping=True,
-        # )
-        # animate_hierarchy(state_dc_full, output_gif=f"gt_plots/{base_name}/{base_name}_dc_hierarchy.gif",
-        #                         frames=5,
-        #                         swee_edgess_per_frame=50, bg_color=[0.98, 0.98, 0.98, 1])
-        
-        # # state_hierarchy = gt.minimize_nested_blockmodel_dl(G,state_args=dict(recs=[edge_weight],rec_types=["real-exponential"]))
-        # state_hierarchy = gt.NestedBlockState(G,base_type=gt.RankedBlockState, state_args=dict(eweight=gt.contract_parallel_edges(G)))
-        # gt.mcmc_equilibrate(state_hierarchy, force_niter=100, mcmc_args=dict(niter=10))
-        
-        # gt.mcmc_equilibrate(state_hierarchy, wait=10, mcmc_args=dict(niter=10))
-        # for i in range(10):
-        #     for j in range(100):
-        #         state_hierarchy.multiflip_mcmc_swee_edges(niter=10,beta=np.inf)
-        # state_hierarchy.draw(pos=pos,
-        #     # edge_color=gt.prop_to_size(edge_weight, power=1, log=True), ecmap=(matplotlib.cm.inferno, .6),
-        #     # eorder=edge_weight, edge_pen_width=gt.prop_to_size(edge_weight, 1, 4, power=1, log=True),
-        #     # edge_gradient=[], 
-        #     bg_color=[0.98, 0.98, 0.98, 1],output=f"gt_plots/{base_name}/{base_name}_hierarchy.png" ,empty_branches=False)
-        # animate_hierarchy(state_hierarchy,output_gif=f"gt_plots/{base_name}/{base_name}_hierarchy.gif",frames=5,swee_edgess_per_frame=50,bg_color=[0.98, 0.98, 0.98, 1])
-
-        
-        # #############################################################################################################################
-        # def animate_ghcp(state_ghcp, tpos, shape, cts, eprop_color, output_gif,frames=5, swee_edgess_per_frame=50, vertex_fill_color=None, 
-        #                 vertex_size=None, **kwargs):
-        #     frame_files = []
-        #     G = state_ghcp.g
-        #     # Get top-level block state
-        #     top_level = state_ghcp.get_levels()[0]
-        #     num_blocks = len(set(top_level.get_blocks().a))
-        #     community_colors = [
-        #         [
-        #             0.5 + 0.5 * np.cos(2 * np.pi * i / max(num_blocks, 1)),
-        #             0.5 + 0.5 * np.cos(2 * np.pi * (i / max(num_blocks, 1) + 1/3)),
-        #             0.5 + 0.5 * np.cos(2 * np.pi * (i / max(num_blocks, 1) + 2/3)),
-        #             0.8
-        #         ]
-        #         # for i in range(max(num_blocks, 1))
-        #         for i in range(num_blocks)
-        #     ]
-        #     vprop_block_color = G.new_vertex_property("vector<double>")
-        #     # Get current block assignments from top level
-            
-        #     for i in range(frames):
-        #         for j in range(swee_edgess_per_frame):
-        #             state_ghcp.multiflip_mcmc_swee_edges(niter=10)
-        #         blocks = top_level.get_blocks()
-        #         for v in G.vertices():
-        #             vprop_block_color[v] = community_colors[blocks[v] % len(community_colors)]
-
-        #         frame_file = f"gt_plots/{base_name}/{base_name}_ghcp_frame_{i:03d}.png"
-        #         gt.graph_draw(
-        #             G, pos=tpos,
-        #             vertex_shape=shape,
-        #             edge_control_points=cts,
-        #             edge_color=eprop_color,
-        #             vertex_fill_color=vprop_block_color,
-        #             vertex_size=vertex_size,
-        #             bg_color=[0.98, 0.98, 0.98, 1],
-        #             output=frame_file,
-        #             **kwargs
-        #         )
-        #         frame_files.append(frame_file)
-        #     # Create GIF
-        #     cmd = ["convert", "-delay", "10", "-loop", "0"] + frame_files + [output_gif]
-        #     subprocess.run(cmd, check=True)
-        #     # Clean up
-        #     for f in frame_files:
-        #         if os.path.exists(f):
-        #             os.remove(f)
-
-        # g_ghcp = gt.GraphView(G, vfilt=gt.label_largest_component(G))
-        # state_ghcp = gt.minimize_nested_blockmodel_dl(G, state_args=dict(recs=[edge_weight],rec_types=["discrete-binomial"]))
-        # gt.mcmc_equilibrate(state_ghcp, wait=10, mcmc_args=dict(niter=10))
-        # tree, prop_map, vprop = gt.get_hierarchy_tree(state_ghcp)
-        # root = tree.vertex(tree.num_vertices() - 1, use_index=False)
-        # tpos = gt.radial_tree_layout(tree, root, weighted=True)
-        # cts = gt.get_hierarchy_control_points(G, tree, tpos)
-        # shape = b.copy()
-        # shape.a %= 14
-        # gt.graph_draw(g_ghcp, pos=G.own_property(tpos), 
-        #             vertex_fill_color=b, 
-        #             vertex_shape=shape,edge_control_points=cts,edge_color=eprop_color,
-        #             vertex_pen_width=2.5,vertex_anchor=0, 
-        #             bg_color=[0.98, 0.98, 0.98, 1],output=f"gt_plots/{base_name}/{base_name}_ghcp.png")
-        # for i in range(100):
-        #     ret = state_ghcp.multiflip_mcmc_swee_edges(niter=10, beta=np.inf)
-        # state_ghcp.draw(edge_color=edge_weight.copy("double"), ecmap=matplotlib.cm.PiYG,
-        #                 eorder=edge_weight, edge_pen_width=gt.prop_to_size(edge_weight, 1, 4, power=1),
-        #                 edge_gradient=[], bg_color=[0.98, 0.98, 0.98, 1],output=f"gt_plots/{base_name}/{base_name}_ghcp_wsbm.png")
-        # animate_ghcp(state_ghcp, tpos, shape, cts, eprop_color,output_gif=f"gt_plots/{base_name}/{base_name}_ghcp.gif",frames=5, swee_edgess_per_frame=50)
-
-        #############################################################################################################################
-        prev_exc_state = G.new_vertex_property("vector<double>")
-        curr_exc_state = G.new_vertex_property("vector<double>")
-        prev_inh_state = G.new_vertex_property("vector<double>")
-        curr_inh_state = G.new_vertex_property("vector<double>")
-        exc_transmited = G.new_vertex_property("bool")
-        inh_transmited = G.new_vertex_property("bool")
-        exc_refractory = G.new_vertex_property("bool")
-        inh_refractory = G.new_vertex_property("bool")
+        prev_exc_state = G.new_vp("vector<double>")
+        curr_exc_state = G.new_vp("vector<double>")
+        prev_inh_state = G.new_vp("vector<double>")
+        curr_inh_state = G.new_vp("vector<double>")
+        exc_transmited = G.new_vp("bool")
+        inh_transmited = G.new_vp("bool")
+        exc_refractory = G.new_vp("bool")
+        inh_refractory = G.new_vp("bool")
         w = gt.max_cardinality_matching(G, edges=True, heuristic=True, brute_force=True)
+        res = gt.max_independent_vertex_set(G)
         # edge_weight is already created after graph replacement, so we don't need to create it again
         def create_graph_tool_animation(G, pos, state, output_file, vertex_fill_color=None,
                                         vertex_color=None, vertex_size=None, edge_color=None, 
@@ -675,41 +605,89 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                         curr_exc_state[v] = prev_exc_state[v]
                         curr_inh_state[v] = prev_inh_state[v]
                 
-                ee = [e for e in G.edges() if vprop_name[e.source()] == pop.id and vprop_type[e.source()] == 'exc' and vprop_type[e.target()] == 'exc']
-                ei = [e for e in G.edges() if vprop_name[e.source()] == pop.id and vprop_type[e.source()] == 'exc' and vprop_type[e.target()] == 'inh']
-                ie = [e for e in G.edges() if vprop_name[e.source()] == pop.id and vprop_type[e.source()] == 'inh' and vprop_type[e.target()] == 'exc']
-                ii = [e for e in G.edges() if vprop_name[e.source()] == pop.id and vprop_type[e.source()] == 'inh' and vprop_type[e.target()] == 'inh']
-                input_ee = [e for e in G.edges() if vprop_name[e.source()] != pop.id and vprop_type[e.source()] == 'exc']
-                input_ii = [e for e in G.edges() if vprop_name[e.source()] != pop.id and vprop_type[e.source()] == 'inh']
-                
-                ee_edges = int(progress * len(ee) * 0.5)
-                ii_edges = int(progress * len(ii) * 0.5)
-                ei_edges = int(progress * len(ei) * 0.6)
-                ie_edges = int(progress * len(ie) * 0.7)
-                input_ee_edges = int (progress * len(input_ee) * 0.5)
-                input_ii_edges = int (progress * len(input_ii) * 0.5)
+                ee_edges = []
+                ii_edges = []
+                ei_edges = []
+                ie_edges = []
+                input_ee_edges = []
+                input_ii_edges = []
                 
                 for idx, e in enumerate(G.edges()):
-                    if idx < ei_edges:
-                        eprop_color[e] = np.random.normal((len(exc_pop_vertex)+len(inh_pop_vertex))/(2*ei_edges), .05, ei_edges)
-                    elif idx < ie_edges:
-                        eprop_color[e] = np.random.normal((len(exc_pop_vertex)+len(inh_pop_vertex))/(2*ie_edges), .05, ie_edges)
-                    elif idx < ee_edges:
-                        eprop_color[e] = np.random.normal(len(exc_pop_vertex)/(2*ee_edges), .05, ee_edges)
-                    elif idx < ii_edges:
-                        eprop_color[e] = np.random.normal(len(inh_pop_vertex)/(2*ii_edges), .05, ii_edges)
-                    elif idx < input_ee_edges:
-                        eprop_color[e] = np.random.normal(len(exc_input_vertex)/(2*input_ee_edges), .05, input_ee_edges)
-                    elif idx < input_ii_edges:
-                        eprop_color[e] = np.random.normal(len(exc_input_vertex)/(2*input_ii_edges), .05, input_ii_edges)
+                    if idx < len(ei_edges):
+                        current_edge = ei_edges[idx]
+                        e = list(current_edge)
+                        s1, t1 = e
+                        t2 = G.vertex(random.randint(0, int(ei_edges[idx].target()) + 1))
+                        if (norm(pos[s1].a - pos[t2].a) <= norm(pos[s1].a - pos[t1].a) and s1 != t2 and t1.out_degree() > 0 and t2 not in s1.out_neighbors()): 
+                            G.remove_edge(ei_edges[idx])
+                            ei_edges[i] = G.add_edge(s1, t2)
+                        eprop_color[e] = np.random.normal((len(exc_pop_vertex)+len(inh_pop_vertex))/(2*len(ei_edges)), .05, ei_edges)
+                    elif idx < len(ie_edges):
+                        current_edge = ie_edges[idx]
+                        e = list(current_edge)
+                        s1, t1 = e
+                        t2 = G.vertex(random.randint(0, int(ie_edges[idx].target()) + 1))
+                        if (norm(pos[s1].a - pos[t2].a) <= norm(pos[s1].a - pos[t1].a) and s1 != t2 and t1.out_degree() > 0 and t2 not in s1.out_neighbors()): 
+                            G.remove_edge(ie_edges[idx])
+                            ie_edges[i] = G.add_edge(s1, t2)
+                        eprop_color[e] = np.random.normal((len(exc_pop_vertex)+len(inh_pop_vertex))/(2*len(ie_edges)), .05, ie_edges)
+                    elif idx < len(ee_edges):
+                        current_edge = ee_edges[idx]
+                        e = list(current_edge)
+                        s1, t1 = e
+                        t2 = G.vertex(random.randint(0, int(ee_edges[idx].target()) + 1))
+                        if (norm(pos[s1].a - pos[t2].a) <= norm(pos[s1].a - pos[t1].a) and s1 != t2 and t1.out_degree() > 0 and t2 not in s1.out_neighbors()): 
+                            G.remove_edge(ee_edges[idx])
+                            ee_edges[i] = G.add_edge(s1, t2)
+                        eprop_color[e] = np.random.normal(len(exc_pop_vertex)/(2*len(ee_edges)), .05, ee_edges)
+                    elif idx < len(ii_edges):
+                        current_edge = ii_edges[idx]
+                        e = list(current_edge)
+                        s1, t1 = e
+                        t2 = G.vertex(random.randint(0, int(ii_edges[idx].target()) + 1))
+                        if (norm(pos[s1].a - pos[t2].a) <= norm(pos[s1].a - pos[t1].a) and s1 != t2 and t1.out_degree() > 0 and t2 not in s1.out_neighbors()): 
+                            G.remove_edge(ii_edges[idx])
+                            ii_edges[i] = G.add_edge(s1, t2)
+                        eprop_color[e] = np.random.normal(len(inh_pop_vertex)/(2*len(ii_edges)), .05, ii_edges)
+                    elif idx < len(input_ee_edges):
+                        current_edge = input_ee_edges[idx]
+                        e = list(current_edge)
+                        s1, t1 = e
+                        t2 = G.vertex(random.randint(0, int(input_ee_edges[idx].target()) + 1))
+                        if (norm(pos[s1].a - pos[t2].a) <= norm(pos[s1].a - pos[t1].a) and s1 != t2 and t1.out_degree() > 0 and t2 not in s1.out_neighbors()): 
+                            G.remove_edge(input_ee_edges[idx])
+                            input_ee_edges[i] = G.add_edge(s1, t2)
+                        eprop_color[e] = np.random.normal(len(exc_input_vertex)/(2*len(input_ee_edges)), .05, input_ee_edges)
+                    elif idx < len(input_ii_edges):
+                        current_edge = input_ii_edges[idx]
+                        e = list(current_edge)
+                        s1, t1 = e
+                        t2 = G.vertex(random.randint(0, int(input_ii_edges[idx].target()) + 1))
+                        if (norm(pos[s1].a - pos[t2].a) <= norm(pos[s1].a - pos[t1].a) and s1 != t2 and t1.out_degree() > 0 and t2 not in s1.out_neighbors()): 
+                            G.remove_edge(input_ii_edges[idx])
+                            input_ii_edges[i] = G.add_edge(s1, t2)
+                        eprop_color[e] = np.random.normal(len(exc_input_vertex)/(2*len(input_ii_edges)), .05, input_ii_edges)
                     else:
                         eprop_color[e] = np.random.normal(G.num_vertices()/(2*G.num_edges()), .05, G.num_edges())
+                
                 cnorm = matplotlib.colors.Normalize(vmin=-abs(edge_weight.fa).max(), vmax=abs(edge_weight.fa).max())
-                frame_file = f"gt_plots/{base_name}/{base_name}_frame_{i:03d}.png"
+                frame_file = f"centrality/{base_name}/{base_name}_frame_{i:03d}.png"
+                if vertex_fill_color is None:
+                    if hasattr(state, 's'):
+                        state_prop = state.s
+                    elif hasattr(state, 'b'):
+                        state_prop = state.b
+                    else:
+                        state_prop = G.vertex_index
+                    computed_vertex_fill_color = gt.perfect_prop_hash([state_prop])[0]
+                else:
+                    computed_vertex_fill_color = vertex_fill_color
+                
+                computed_vertex_shape = computed_vertex_fill_color
                 gt.graph_draw(
                     G, pos=fixed_pos,
-                    vertex_fill_color=res,
-                    vertex_shape=b,
+                    vertex_fill_color=computed_vertex_fill_color,
+                    vertex_shape=computed_vertex_shape,
                     vertex_color=curr_exc_state if vprop_type == "exc" else curr_inh_state,
                     edge_color=eprop_color,
                     edge_pen_width= w.t(lambda x: x + 1),
@@ -727,67 +705,19 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                 if os.path.exists(f):
                     os.remove(f)
             gc.collect()
+        
         #############################################################################################################################
         gt.remove_parallel_edges(G)
-        f = np.eye(4) * 0.1
-        state_graph = gt.PottsGlauberState(G, f)
-        ret_graph = state_graph.iterate_async(niter=1000 * G.num_vertices())
-        gt.graph_draw(G, gt.sfdp_layout(G, cooling_step=0.99), vertex_anchor=0, 
-                      vertex_fill_color=gt.perfect_prop_hash([state_graph.s])[0],  
-                      vertex_shape=gt.perfect_prop_hash([state_graph.s])[0], 
-                      edge_color=w, edge_pen_width=w.t(lambda x: x + 1),
-                      edge_start_marker="bar", edge_end_marker="arrow", output_size=(800, 800),
-                      bg_color=[0.98, 0.98, 0.98, 1], output=f"gt_plots/{base_name}/{base_name}_graph.png")
+        gt.graph_draw(G, gt.sfdp_layout(G, cooling_step=0.99), vertex_fill_color=b, vertex_color=res, 
+                      vertex_shape=res,edge_color=w, edge_pen_width=w.t(lambda x: x + 1),
+                      vcmap=matplotlib.cm.Set3,output_size=(800, 800),
+                      bg_color=[0.98, 0.98, 0.98, 1], output=f"centrality/{base_name}/{base_name}_graph.png")
         
-        create_graph_tool_animation(G, gt.sfdp_layout(G, cooling_step=0.99), state_graph, output_file=f"gt_plots/{base_name}/{base_name}_graph_basic.gif",
-                                    vertex_fill_color=gt.perfect_prop_hash([state_graph.s])[0], # vcmap=matplotlib.cm.viridis,
-                                    edge_color=w,edge_pen_width=w.t(lambda x: x + 1)
+        create_graph_tool_animation(G, pos, state, output_file=f"centrality/{base_name}/{base_name}_graph.gif",
+                                    vertex_fill_color=b, 
+                                    edge_color=w, edge_pen_width=w.t(lambda x: x + 1), 
                                 )
-        kcore = gt.kcore_decomposition(G)
-        state_kcore = gt.NormalState(G, sigma=0.001, w=-100)
-        ret_kcore = state_kcore.iterate_sync(niter=1000)
-        gt.graph_draw(G, gt.sfdp_layout(G, cooling_step=0.99), vertex_fill_color=kcore.t(lambda x: x + 1), 
-                      vertex_shape=state_kcore.s,output_size=(800, 800),
-                      edge_color=w, edge_pen_width=w.t(lambda x: x + 1), ecmap=matplotlib.cm.viridis,
-                      bg_color=[0.98, 0.98, 0.98, 1], output=f"gt_plots/{base_name}/{base_name}_kcore.png")
-        
-        create_graph_tool_animation(G, gt.sfdp_layout(G, cooling_step=0.99), state_kcore, 
-                                    output_file=f"gt_plots/{base_name}/{base_name}_kcore_basic.gif",
-                                    vertex_fill_color=state_kcore.s, 
-                                    vertex_shape=state_kcore.s,# vcapmap=matplotlib.cm.viridis,
-                                    edge_color=w, edge_pen_width=w.t(lambda x: x + 1), ecmap=matplotlib.cm.Set1,
-                                )
-        try:
-            similarity = gt.vertex_similarity(GraphView(G, reversed=True),"inv-log-weight")
-            color = G.new_vp("double")
-            color.a = similarity[0].a
-            state_sim = gt.CIsingGlauberState(G, beta=.2)
-            G = state_sim.g
-            ret_sim = state_sim.iterate_async(niter=1000 * G.num_vertices())
-            gt.graph_draw(G, gt.sfdp_layout(G, cooling_step=0.99), vertex_fill_color=state_sim.s,
-                          vertex_shape=gt.perfect_prop_hash([state_sim.s])[0],output_size=(800, 800),
-                          edge_color=w, edge_pen_width=w.t(lambda x: x + 1), ecmap=matplotlib.cm.Set3,
-                          bg_color=[0.98, 0.98, 0.98, 1], output=f"gt_plots/{base_name}/{base_name}_similarity.png")
-            
-            create_graph_tool_animation(G, gt.sfdp_layout(G, cooling_step=0.99), state_sim, 
-                                        vertex_fill_color=state_sim.s, 
-                                        vertex_shape=gt.perfect_prop_hash([state_sim.s])[0],
-                                        output_file=f"gt_plots/{base_name}/{base_name}_similarity_basic.gif",
-                                        edge_color=w, 
-                                        edge_pen_width=w.t(lambda x: x + 1), ecmap=matplotlib.cm.Set3,
-                                    )
-        except Exception as e:
-            logging.info(f"[WARNING] Failed to calculate vertex similarity: {e}")        
-        
-        #############################################################################################################################
-        G = price_network(G.num_vertices())
-        deg = G.degree_property_map("in")
-        deg.a = 2 * (np.sqrt(deg.a) * 0.5 + 0.4)
-        ebet = gt.betweenness(G)[1]
-        gt.graphviz_draw(G, pos=gt.sfdp_layout(G, cooling_step=0.99), maxiter=100, ratio="compress", overlap=False, layout="sfdp",
-                        vcolor=deg, vorder=deg, elen=10, vcmap=matplotlib.cm.gist_heat,
-                        ecolor=ebet, eorder=ebet, output=f"gt_plots/{base_name}/{base_name}_graphviz.png")
-        
+
         #############################################################################################################################
         metrics = {}
         centrality_metrics = {
@@ -807,22 +737,7 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         except Exception as _e:
             logging.warning(f"Could not save graph to {base_name}.gt: {_e}")
         # Compute metrics once (in-memory) and convert returned numpy arrays to graph-tool vertex properties
-        try:
-            from metrics.generator import compute_and_save_metrics
-        except ImportError:
-            import importlib.util
-            spec_path = os.path.join(os.getcwd(), "metrics_analysis_project", "src", "metrics", "generator.py")
-            # spec = importlib.util.spec_from_file_location("metrics.generator", spec_path)
-            if os.path.exists(spec_path):
-                spec = importlib.util.spec_from_file_location("metrics.generator", spec_path)
-                if spec and spec.loader:
-                    mod = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(mod)
-                    compute_and_save_metrics = getattr(mod, "compute_and_save_metrics")
-                else:
-                    raise ImportError("Cannot load metrics.generator from spec")
-            else:
-                raise
+        from metrics.generator import compute_and_save_metrics
 
         out_dir = os.path.join(os.getcwd(), "metrics_out")
         try:
@@ -843,12 +758,12 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                     tmp = np.full(G.num_vertices(), np.nan, dtype=float)
                     tmp[:min(arr_np.size, G.num_vertices())] = arr_np[:min(arr_np.size, G.num_vertices())]
                     arr_np = tmp
-                vp = G.new_vertex_property("double")
+                vp = G.new_vp("double")
                 vp.a = arr_np
                 metrics[k] = vp
             except Exception as e:
                 logging.warning(f"Failed to convert metric {k} to vertex_property; filling NaNs: {e}")
-                vp = G.new_vertex_property("double")
+                vp = G.new_vp("double")
                 vp.a = np.full(G.num_vertices(), np.nan, dtype=float)
                 metrics[k] = vp
                 
@@ -856,7 +771,7 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         for key in set(centrality_metrics.values()):
             if key not in metrics:
                 logging.info(f"Metric '{key}' missing — filling with NaNs")
-                vp = G.new_vertex_property("double")
+                vp = G.new_vp("double")
                 vp.a = np.full(G.num_vertices(), np.nan, dtype=float)
                 metrics[key] = vp
 
@@ -870,7 +785,7 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                     metric[v] = metric[v]
                 # Ensure metric is valid
                 if not hasattr(metric, 'a') or len(metric.a) != G.num_vertices():
-                    tmp = G.new_vertex_property("double")
+                    tmp = G.new_vp("double")
                     tmp.a = np.full(G.num_vertices(), np.nan, dtype=float)
                     try:
                         arr = np.asarray(metric)
@@ -881,13 +796,12 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                         metric = tmp
                 _ensure_pos_valid(gt.sfdp_layout(G, cooling_step=0.99), G)
                 # Try to draw with graph-tool (with fallbacks)
-                output_file = f"gt_plots/{base_name}/{base_name}_graph_{metric_name}.png"
+                output_file = f"centrality/{base_name}/{base_name}_{metric_name}.png"
                 draw_success = safe_graph_draw(
                     G, pos_prop=gt.sfdp_layout(G, cooling_step=0.99), Gref=G,
                     output=output_file,
                     vertex_fill_color=metric, vertex_shape=metric,
-                    # vertex_size=gt.prop_to_size(metric, mi=5, ma=15),
-                    vcmap=matplotlib.cm.gist_heat,
+                    vcmap=matplotlib.cm.Set3,
                     bg_color=[0.98, 0.98, 0.98, 1]
                 )
                 if draw_success:
@@ -895,21 +809,7 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                 else:
                     logging.info(f"[ERROR] Failed to save {output_file}")
                 
-                # Also try graphviz draw as backup
-                t1 = time.time()
-                try:
-                    pos = G.own_property(pos) if hasattr(G, 'own_property') else gt.sfdp_layout(G)
-                    _ensure_pos_valid(pos, G)
-                    gt.graphviz_draw(
-                        G, pos, maxiter=100, ratio="compress", overlap=False,layout="sfdp",
-                        vcolor=metric, vorder=metric, elen=10,
-                        vcmap=matplotlib.cm.gist_heat,
-                        ecolor=ebet, eorder=ebet,
-                        output=f"gt_plots/{base_name}/{base_name}_graphviz_{metric_name}.png")
-                    logging.info(f"[INFO] Saved gt_plots/{base_name}/{base_name}_graphviz_{metric_name}.png in {time.time() - t1:.2f} seconds")
-                except Exception as e:
-                    logging.warning(f"graphviz_draw failed for {metric_name}: {e}")
-
+                
             except Exception as e:
                 logging.error(f"Failed to process metric {metric_name}: {e}")
                 continue
@@ -924,28 +824,41 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         raise
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
     nml_net_files = [
-        "TC2CT.net.nml" ,
-        "TC2PT.net.nml",
-        "TC2IT4_IT2CT.net.nml",
-        "TC2IT2PTCT.net.nml",
+        # os.path.join(script_dir, "net_files/TC2CT.net.nml"),
+        # os.path.join(script_dir, "net_files/TC2PT.net.nml"),
+        # os.path.join(script_dir, "net_files/TC2IT4_IT2CT.net.nml"),
+        # os.path.join(script_dir, "net_files/TC2IT2PTCT.net.nml"),
+        # os.path.join(script_dir, "net_files/C2T_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/iC_max.net.nml"),
+        # os.path.join(script_dir, "net_files/T2C_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/iT_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/loop_iT_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/loop_L1.net.nml"),
+        # os.path.join(script_dir, "net_files/loop_L23.net.nml"),
+        # os.path.join(script_dir, "net_files/loop_L4.net.nml"),
+        # os.path.join(script_dir, "net_files/loop_L5.net.nml"),
+        # os.path.join(script_dir, "net_files/loop_L6.net.nml"),
+        # os.path.join(script_dir, "net_files/max_CTC_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/M1a_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/M1b_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/M2a_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/M2b_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/S1a_max_plus.net.nml"),
+        # os.path.join(script_dir, "net_files/S1b_max_plus.net.nml"),
+        os.path.join(script_dir, "net_files/M1_max_plus.net.nml"),
+        os.path.join(script_dir, "net_files/M2_max_plus.net.nml"),
+        os.path.join(script_dir, "net_files/S1_max_plus.net.nml"),
+        os.path.join(script_dir, "net_files/M2aM1aS1a_max_plus.net.nml"),
+        os.path.join(script_dir, "net_files/S1bM1bM2b_max_plus.net.nml"),
+        os.path.join(script_dir, "net_files/M2M1S1_max_plus.net.nml")
     ]
     for nml_net_file in nml_net_files:
-        base_name = nml_net_file.split(".")[0]
+        if not os.path.exists(nml_net_file):
+            print(f"Warning: File '{nml_net_file}' does not exist. Skipping...")
+            continue
+        base_name = os.path.basename(nml_net_file).split(".")[0]
         visualize_network(nml_net_file, p_intra=0.9, p_inter=0.1,base_name=base_name)
-        graph_types = ['graph', 'graphviz']
-        metric_names = [
-            'pr', 'bt', 'V', 'katz','hitsX', 'hitsY', 't', 'tt','c'
-        ]
-        file_paths = []
-        for graph_type in graph_types:
-            for metric in metric_names:
-                file_name = f"gt_plots/{base_name}/{base_name}_{graph_type}_{metric}.png"
-                file_paths.append(file_name)
 
-        for file_path in file_paths:
-            if os.path.exists(file_path):
-                print(f"File '{file_path}' size: {os.path.getsize(file_path)/(1024*1024):.2f} MB")
-            else:
-                print(f"File '{file_path}' not found")
 

@@ -65,22 +65,48 @@ def _metric_per_component_mapped(G, metric_callable):
                     res = item
                     break
 
+        # Convert res to numpy array safely
+        res_array = None
         if hasattr(res, "a"):
-            for v in G_sub.vertices():
-                arr[int(v)] = float(res[v])
+            res_array_attr = getattr(res, 'a', None)
+            if res_array_attr is not None:
+                try:
+                    res_array = np.asarray(res_array_attr, dtype=float)
+                except (TypeError, ValueError):
+                    res_array = None
+        elif hasattr(res, "get_array"):
+            try:
+                res_array = sanitize_array(res)
+            except (TypeError, ValueError):
+                res_array = None
+        
+        if res_array is not None and len(res_array) > 0:
+            for i, v in enumerate(G_sub.vertices()):
+                if i < len(res_array):
+                    arr[int(v)] = float(res_array[i])
         else:
-            tmp = np.asarray(res, dtype=float)
-            idxs = [int(v) for v in G_sub.vertices()]
-            for i, vid in enumerate(idxs):
-                if i < tmp.size:
-                    arr[vid] = float(tmp[i])
+            # Fallback: try direct conversion
+            try:
+                tmp = np.asarray(res, dtype=float)
+                idxs = [int(v) for v in G_sub.vertices()]
+                for i, vid in enumerate(idxs):
+                    if i < tmp.size:
+                        arr[vid] = float(tmp[i])
+            except (TypeError, ValueError, IndexError):
+                # If conversion fails, leave as NaN (already initialized)
+                pass
 
     return arr
 
-def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, nthreads=8, save_files=True):
+def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, nthreads=8, save_files=True, use_undirected_for_eigenvector=False):
     """
     Return (metrics_dict, npz_path_or_None, csv_path_or_None)
     metrics_dict: name -> numpy array (len == G.num_vertices())
+    
+    Parameters:
+    - use_undirected_for_eigenvector: If True, creates undirected version of graph 
+      for eigenvector-based metrics (eigenvector, katz, eigentrust, trust_transitivity)
+      to handle sparse directed networks with no strongly connected components.
     """
     os.makedirs(out_dir, exist_ok=True)
     metrics = {}
@@ -92,44 +118,58 @@ def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, n
     
     try:
         try:
-            metrics['pagerank'] = sanitize_array(gt.pagerank(G).get_array())
+            metrics['pagerank'] = sanitize_array(gt.pagerank(G))
         except Exception as e:
             logger.warning("pagerank failed: %s", e)
             metrics['pagerank'] = np.full(G.num_vertices(), np.nan)
 
         try:
             btw_vp, _ = gt.betweenness(G)
-            metrics['betweenness'] = sanitize_array(btw_vp.get_array())
+            metrics['betweenness'] = sanitize_array(btw_vp)
         except Exception as e:
             logger.warning("betweenness failed: %s", e)
             metrics['betweenness'] = np.full(G.num_vertices(), np.nan)
 
         try:
-            # Use harmonic closeness centrality which works on disconnected graphs
-            # Harmonic closeness = sum(1/distance) for all reachable nodes
-            # This avoids the problem of standard closeness returning 0 for disconnected graphs
-            harmonic_closeness = gt.closeness(G, harmonic=True)
-            metrics['closeness'] = sanitize_array(harmonic_closeness.get_array())
+            cl = gt.closeness(G, harmonic=True)
+            metrics['closeness'] = sanitize_array(cl)
         except Exception as e:
-            logger.warning("harmonic closeness failed: %s", e)
-            try:
-                # Fallback to standard closeness (will return 0 for disconnected components)
-                standard_closeness = gt.closeness(G, harmonic=False)
-                metrics['closeness'] = sanitize_array(standard_closeness.get_array())
-            except Exception as e2:
-                logger.warning("standard closeness also failed: %s", e2)
-                metrics['closeness'] = np.full(G.num_vertices(), np.nan)
+            logger.warning("closeness failed: %s", e)
+            metrics['closeness'] = np.full(G.num_vertices(), np.nan)
+
+        # Validate all metrics have correct length
+        expected_length = G.num_vertices()
+        for key, arr in list(metrics.items()):
+            if len(arr) != expected_length:
+                logger.warning(f"Metric '{key}' has length {len(arr)}, expected {expected_length}. Fixing...")
+                if len(arr) < expected_length:
+                    fixed_arr = np.full(expected_length, np.nan)
+                    fixed_arr[:len(arr)] = arr
+                    metrics[key] = fixed_arr
+                else:
+                    metrics[key] = arr[:expected_length]
+
+        # Create undirected graph if needed for eigenvector-based metrics
+        G_undirected = None
+        if use_undirected_for_eigenvector:
+            G_undirected = G.copy()
+            G_undirected.set_directed(False)
+            logger.info("Created undirected version for eigenvector-based metrics")
 
         try:
-            # metrics['eigenvector'] = _metric_on_largest_component_mapped(G, lambda g, w=None: gt.eigenvector(g, w if w is not None else None))
-            metrics['eigenvector'] = _metric_per_component_mapped(G, lambda g, w=None: gt.eigenvector(g, w if w is not None else None))
+            if use_undirected_for_eigenvector and G_undirected is not None:
+                metrics['eigenvector'] = _metric_per_component_mapped(G_undirected, lambda g, w=None: gt.eigenvector(g, w if w is not None else None))
+            else:
+                metrics['eigenvector'] = _metric_per_component_mapped(G, lambda g, w=None: gt.eigenvector(g, w if w is not None else None))
         except Exception as e:
             logger.warning("eigenvector failed: %s", e)
             metrics['eigenvector'] = np.full(G.num_vertices(), np.nan)
 
         try:
-            # metrics['katz'] = _metric_on_largest_component_mapped(G, lambda g, w=None: gt.katz(g, weight=w if w is not None else None))
-            metrics['katz'] = _metric_per_component_mapped(G, lambda g, w=None: gt.katz(g, weight=w if w is not None else None))
+            if use_undirected_for_eigenvector and G_undirected is not None:
+                metrics['katz'] = _metric_per_component_mapped(G_undirected, lambda g, w=None: gt.katz(g, weight=w if w is not None else None))
+            else:
+                metrics['katz'] = _metric_per_component_mapped(G, lambda g, w=None: gt.katz(g, weight=w if w is not None else None))
         except Exception as e:
             logger.warning("katz failed: %s", e)
             metrics['katz'] = np.full(G.num_vertices(), np.nan)
@@ -151,8 +191,10 @@ def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, n
             metrics['hits_hub'] = np.full(G.num_vertices(), np.nan)
 
         try:
-            # metrics['eigentrust'] = _metric_on_largest_component_mapped(G, lambda g, w=None: gt.eigentrust(g, w if w is not None else None))
-            metrics['eigentrust'] = _metric_per_component_mapped(G, lambda g, w=None: gt.eigentrust(g, w if w is not None else None))
+            if use_undirected_for_eigenvector and G_undirected is not None:
+                metrics['eigentrust'] = _metric_per_component_mapped(G_undirected, lambda g, w=None: gt.eigentrust(g, w if w is not None else None))
+            else:
+                metrics['eigentrust'] = _metric_per_component_mapped(G, lambda g, w=None: gt.eigentrust(g, w if w is not None else None))
         except Exception as e:
             logger.warning("eigentrust failed: %s", e)
             metrics['eigentrust'] = np.full(G.num_vertices(), np.nan)
@@ -167,8 +209,10 @@ def compute_and_save_metrics(G, out_dir=".", prefix="network", normalize=True, n
                 return gt.trust_transitivity(g, w if w is not None else None)
 
         try:
-            # metrics['trust_transitivity'] = _metric_on_largest_component_mapped(G, trust_call)
-            metrics['trust_transitivity'] = _metric_per_component_mapped(G, trust_call)
+            if use_undirected_for_eigenvector and G_undirected is not None:
+                metrics['trust_transitivity'] = _metric_per_component_mapped(G_undirected, trust_call)
+            else:
+                metrics['trust_transitivity'] = _metric_per_component_mapped(G, trust_call)
         except Exception as e:
             logger.warning("trust_transitivity failed: %s", e)
             metrics['trust_transitivity'] = np.full(G.num_vertices(), np.nan)
