@@ -10,7 +10,7 @@ build:
     nodejs: "20"
   commands:
     - npm install
-    - npx myst build
+    - npx myst build --output-dir $READTHEDOCS_OUTPUT/html
 
 python:
   install:
