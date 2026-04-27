@@ -11,7 +11,12 @@ seaborn>=0.11.0
 networkx>=2.6.0
 # Note: graph-tool must be installed via conda from conda-forge channel
 # It is not available on PyPI and requires compilation
-graph-tool>=2.55
+# graph-tool>=2.55
 
 # Additional utilities
 tqdm>=4.62.0
+
+# Documentation dependencies
+jupyter-book>=0.13.0
+myst-parser>=0.18.0
+sphinx>=5.0.0
