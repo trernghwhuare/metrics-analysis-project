@@ -11,6 +11,7 @@ build:
   commands:
     - npm install
     - npx myst build --html
+    - mkdir -p $READTHEDOCS_OUTPUT/html/
     - cp -r _build/html/* $READTHEDOCS_OUTPUT/html/
 
 python:
