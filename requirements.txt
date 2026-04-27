@@ -19,4 +19,5 @@ tqdm>=4.62.0
 # Documentation dependencies
 jupyter-book>=0.13.0
 myst-parser>=0.18.0
+mystmd>=1.8.2,<2
 sphinx>=5.0.0
