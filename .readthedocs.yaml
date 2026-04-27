@@ -8,7 +8,7 @@ build:
   tools:
     python: "3.11"
   commands:
-    - python -m mystmd build
+    - python build_docs.py
 
 python:
   install:
