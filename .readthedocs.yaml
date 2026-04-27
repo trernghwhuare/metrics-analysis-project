@@ -1,20 +1,31 @@
-# Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# Read the Docs configuration file v2
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html
 
 version: 2
 
+# Build configuration
 build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
     nodejs: "20"
-  commands:
-    - npm install
-    - myst build
 
+# Conda environment for graph-tool and system dependencies
 conda:
   environment: environment.yml
 
+# Python package installation
 python:
   install:
     - requirements: requirements.txt
+
+# Build commands for MyST CLI documentation
+sphinx:
+  builder: html
+  configuration: _config.yml
+  fail_on_warning: false
+
+# Enable additional output formats
+formats:
+  - pdf
+  - epub
