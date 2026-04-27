@@ -25,13 +25,11 @@ dist/
 
 # Generated output directories
 metrics_out/
-plots/
 test_output/
 results/
 results_weighted/
 metrics_out_*/
 test_output_fixed/
-gt_plots/
 
 # Node.js
 node_modules/
