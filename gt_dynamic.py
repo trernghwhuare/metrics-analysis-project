@@ -378,9 +378,8 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                         colors = np.random.uniform(0.4, 0.9, len(y_pos))
                         for v in g.vertices():
                             sizes.append(dynamic_node_size)
-                        # ax.scatter(nodes_x, nodes_y, c=colors, s=sizes, cmap='summer', zorder=1, linewidths=dynamic_edge_width, edgecolors='black', alpha=0.8)
                         ax.scatter(x_pos, y_pos, c=colors, s=sizes, linewidth=dynamic_edge_width, edgecolors='grey', alpha=0.8, cmap='summer', zorder=1)
-                                   
+                        
                         edges_list = list(g.edges())
                         subsample_rate = max(1, len(edges_list) // 5000000)  # Increase the number of edges shown
                         plotted_edges = 0
@@ -407,6 +406,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     y_coords = [pos[s1][1], pos[t1][1]]
                                     edge_color = 'red'
                                     ax.plot(x_coords, y_coords, edge_color, alpha=0.7, zorder=2, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(x_coords, y_coords, c=edge_color, s=dynamic_edge_width * 10, alpha=0.7, zorder=4, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                                 plotted_edges += 1 * len([current_edge])
                         if len(renewal_input_edges) > 0:
                             subsample_rate = max(1, len(renewal_input_edges) // 100000000)  # the more edges the delicate
@@ -419,13 +419,14 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     input_y_coords = [pos[s1][1], pos[t1][1]]
                                     edge_color = 'blue'
                                     ax.plot(input_x_coords, input_y_coords, edge_color, alpha=0.7, zorder=3, linewidth=dynamic_edge_width * 1.2, linestyle='-')
+                                    ax.scatter(input_x_coords, input_y_coords, c=edge_color, s=dynamic_edge_width * 8, alpha=0.7, zorder=5, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                                 plotted_input_edges += 1 * len([current_edge])
                         from matplotlib.lines import Line2D
                         legend_elements = [
                             Line2D([0], [0], color='red', lw=2, label='Internal Edges'),
                             Line2D([0], [0], color='blue', lw=2, label='Input Edges'),
                         ]
-                        ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=8)
+                        ax.legend(handles=legend_elements, loc='upper left', frameon=True, fontsize=8)
                         ax.set_title(f'{network_name} Dynamic layout: Frame {count}\n Edges: {len(renewal_edges)} | Input edges: {len(renewal_input_edges)}', fontsize=10)
                         ax.set_aspect('equal')
                         

@@ -344,7 +344,6 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     # Create a matplotlib figure for this frame with even dimensions
                     fig, ax = plt.subplots(1, 1, figsize=(12, 12), dpi=200)
                     fig.patch.set_facecolor('white')
-
                     # Extract positions for plotting
                     x_pos = [pos[v][0] for v in g.vertices()]
                     y_pos = [pos[v][1] for v in g.vertices()]
@@ -397,6 +396,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     if refractory_x_pos:
                         ax.scatter(refractory_x_pos, refractory_y_pos, c=refrac_colors, # cmap='viridis', 
                                    s=refrac_sizes, alpha=0.7, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
+                    ax.set_facecolor('white')  # Set axes background to white
                     
                     # Plot edges with enhanced visualization
                     edges_list = list(g.edges())
@@ -426,11 +426,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_state = curr_state[s1]
                                 dst_state = curr_state[t1]
                                 if src_state == I or dst_state == I:  # If either node is active
-                                    ax.plot(x_coords, y_coords, 'red', zorder=3, alpha=0.7, linewidth=dynamic_edge_width, linestyle='--')
+                                    ax.plot(x_coords, y_coords, 'red', alpha=0.7, linewidth=dynamic_edge_width * 0.7, linestyle='-')
                                 elif src_state == R or dst_state == R:  # If either node is refractory
-                                    ax.plot(x_coords, y_coords, 'gold', zorder=3, alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='-')
+                                    ax.plot(x_coords, y_coords, 'coral', alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='--')
                                 elif src_state == S or dst_state == S:
-                                    ax.plot(x_coords, y_coords, 'blue', zorder=3, alpha=0.3, linewidth=dynamic_edge_width * 0.5, linestyle=':')
+                                    ax.plot(x_coords, y_coords, 'blue', alpha=0.3, linewidth=dynamic_edge_width * 0.7, linestyle=':')
                                 plotted_edges += 1
                     if len(renewal_input_edges) > 0:
                         subsample_rate = max(1, len(renewal_input_edges) // 5000000)  # the more edges the delicate
@@ -444,24 +444,24 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_state = curr_state[s1]
                                 dst_state = curr_state[t1]
                                 if src_state == I or dst_state == I:  # If either node is active
-                                    ax.plot(input_x_coords, input_y_coords, 'purple', zorder=4, alpha=0.7, linewidth=dynamic_edge_width, linestyle='--')
+                                    ax.plot(input_x_coords, input_y_coords, 'gold', alpha=0.7, linewidth=dynamic_edge_width * 0.6, linestyle='-')
                                 elif src_state == R or dst_state == R:  # If either node is refractory
-                                    ax.plot(input_x_coords, input_y_coords, 'lightcoral', zorder=4,alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='-')
+                                    ax.plot(input_x_coords, input_y_coords, 'yellow', alpha=0.5, linewidth=dynamic_edge_width * 0.6, linestyle='--')
                                 elif src_state == S or dst_state == S:
-                                    ax.plot(input_x_coords, input_y_coords, 'green', zorder=4,alpha=0.3, linewidth=dynamic_edge_width * 0.5, linestyle=':')
+                                    ax.plot(input_x_coords, input_y_coords, 'purple', alpha=0.3, linewidth=dynamic_edge_width  * 0.6, linestyle=':')
                                 plotted_input_edges += 1
             
                     from matplotlib.lines import Line2D
                     legend_elements = [
-                        Line2D([0], [0], color='red', lw=2, label='I (Edges)', linestyle='--', alpha=0.7),
-                        Line2D([0], [0], color='gold', lw=2, label='R (Edges)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='blue', lw=2, label='S (Edges)', linestyle=':', alpha=0.3),
-                        Line2D([0], [0], color='purple', lw=2, label='I (Input Edges)', linestyle='--', alpha=0.7),
-                        Line2D([0], [0], color='lightcoral', lw=2, label='R (Input Edges)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='green', lw=2, label='S (Input Edges)', linestyle=':', alpha=0.3),
+                        Line2D([0], [0], color='red', lw=2, label='I (Edges)', linestyle='-', alpha=0.7),
+                        Line2D([0], [0], color='gold', lw=2, label='I (Input Edges)', linestyle='-', alpha=0.7),
+                        Line2D([0], [0], color='coral', lw=2, label='R (Edges)', linestyle='--', alpha=0.5),
+                        Line2D([0], [0], color='yellow', lw=2, label='R (Input Edges)', linestyle='--', alpha=0.5),
+                        Line2D([0], [0], color='blue', lw=2, label='S (Edges)', linestyle='-.', alpha=0.3),
+                        Line2D([0], [0], color='purple', lw=2, label='S (Input Edges)', linestyle=':', alpha=0.3),
                     ]
-                    ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=12)
-                    ax.set_title(f'{network_name} Dynamic S->I->R->S epidemic model: Frame {count}\n Inactive: {inactive_count} | Active: {active_count} | Refractory: {refractory_count} || Edges: {len(renewal_edges)} | Input Edges: {len(renewal_input_edges)}', fontsize=14)
+                    ax.legend(handles=legend_elements, loc='upper left', frameon=True, fontsize=12)
+                    ax.set_title(f'{network_name} Dynamic S->I->R->S epidemic model: Frame {count}\n Inactive(S)={inactive_count} | Active(I)={active_count} | Refractory(R)={refractory_count}\n Edges={len(renewal_edges)} | Input Edges={len(renewal_input_edges)}', fontsize=14)
                     ax.set_aspect('equal')
                     
                     if len(all_x_positions) > 0 and len(all_y_positions) > 0:
@@ -479,7 +479,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     if frame_limits is not None:    # Apply fixed axis limits with padding
                         ax.set_xlim(frame_limits[0], frame_limits[1])
                         ax.set_ylim(frame_limits[2], frame_limits[3])
-                        
+
                     # Save frame as PNG file with even dimensions
                     plt.savefig(f'{network_frames_dir}/frame_{count:04d}.png', dpi=200, bbox_inches='tight', facecolor='white')
                     plt.close(fig)

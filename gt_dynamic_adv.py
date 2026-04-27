@@ -243,14 +243,27 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
         
         g = accelerated_price_network_generation(num_nodes, num_input_nodes, c=0.8, directed=False)
         
-        node_id_to_vertex = {}
+        node_id_to_index = {}
         for i, node_info in enumerate(nodes_data):
-            node_id_to_vertex[node_info['component']] = i
-        input_id_to_vertex = {}
+            node_id_to_index[node_info['component']] = i
+        inhibitory_nodes = set()
+        excitatory_nodes = set()
+        for node_info in nodes_data:
+            if node_info['type'] == 'Inh' and node_info['component'] in node_id_to_index:
+                inhibitory_nodes.add(node_id_to_index[node_info['component']])
+            elif node_info['type'] == 'Exc' and node_info['component'] in node_id_to_index:
+                excitatory_nodes.add(node_id_to_index[node_info['component']])
+        input_id_to_index = {}
         for i, node_info in enumerate(input_nodes_data):
-            input_id_to_vertex[node_info['component']] = i
-        print(f"Mapped node IDs to graph vertices: {len(node_id_to_vertex)} regular nodes, {len(input_id_to_vertex)} input nodes")
-        
+            input_id_to_index[node_info['component']] = i
+        print(f"Mapped node IDs to graph vertices: {len(node_id_to_index)} regular nodes, {len(input_id_to_index)} input nodes")
+        inhibitory_inputs = set()
+        excitatory_inputs = set()
+        for node_info in input_nodes_data:
+            if node_info['type'] == 'Inh' and node_info['component'] in input_id_to_index:
+                inhibitory_inputs.add(input_id_to_index[node_info['component']])
+            elif node_info['type'] == 'Exc' and node_info['component'] in input_id_to_index:
+                excitatory_inputs.add(input_id_to_index[node_info['component']])
         # Add edges between connected nodes
         edge_added_count = 0
         ee_count = 0
@@ -262,8 +275,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
             target_id = edge_info['target']
             src_type = edge_info['source_type']
             tgt_type = edge_info['target_type']
-            if source_id in node_id_to_vertex and target_id in node_id_to_vertex:
-                edge_added_count += 1 
+            if source_id in node_id_to_index and target_id in node_id_to_index:
+                source_idx = node_id_to_index[source_id]
+                target_idx = node_id_to_index[target_id]
+            edge_added_count += 1 
             if src_type == 'Exc' and tgt_type == 'Exc':
                 ee_count += 1 
             if src_type == 'Exc' and tgt_type == 'Inh':
@@ -281,8 +296,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
             target_id = input_edge_info['target']
             input_src_type = input_edge_info['source_type']
             input_tgt_type = input_edge_info['target_type']
-            if source_id in input_id_to_vertex and target_id in node_id_to_vertex :
-                input_edge_added_count += 1 
+            if source_id in input_id_to_index and target_id in node_id_to_index :
+                source_idx = input_id_to_index[source_id]
+                target_idx = node_id_to_index[target_id]
+            input_edge_added_count += 1 
             if input_src_type == 'Exc' and input_tgt_type == 'Exc':
                 input_ee_count += 1
             if input_src_type == 'Inh' and input_tgt_type == 'Inh':
@@ -297,6 +314,20 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
         total_edges = edge_added_count + input_edge_added_count
         logging.info(f"Total edges: {total_edges}")
 
+        if total_nodes > 0:
+            density = total_edges / total_nodes
+        else:
+            density = 0
+        
+        # Create node type mapping for edge classification
+        node_types = {}
+        for i, node_info in enumerate(nodes_data): # Map regular network nodes
+            node_type = node_info['type'] 
+            node_types[i] = 'Exc' if node_type.startswith('E') else 'Inh'
+        for j, input_node_info in enumerate(input_nodes_data): # Map input nodes 
+            input_node_type = input_node_info['type'] 
+            node_types[num_nodes + j] = 'Exc' if input_node_type.startswith('E') else 'Inh'
+        
         if total_nodes <= 1500:
             dynamic_node_size = 18.0
             dynamic_edge_width = 2.0
@@ -312,6 +343,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
         else:
             dynamic_node_size = 2.5
             dynamic_edge_width = 0.1
+
         pos = accelerated_sfdp_layout(g, K=K, cooling_step=0.99, C=0.5, multilevel=True, R=8, gamma=1)
         # pos = sfdp_layout(g, K=K, cooling_step=0.99, C=100, multilevel=True, R=20, gamma=1)
         
@@ -328,10 +360,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
         count = 0
         all_x_positions = []
         all_y_positions = []
+        vertex_index_map = {v: i for i, v in enumerate(g.vertices())}
         edge_index_map = {e: i for i, e in enumerate(g.edges())}
         # This function will be called repeatedly to update the vertex layout
         def update_state():
-            nonlocal count, edges, all_x_positions, all_y_positions, edge_index_map
+            nonlocal count, edges, all_x_positions, all_y_positions, vertex_index_map, edge_index_map
 
             # Perform fewer iterations of the layout step for faster processing
             sfdp_layout(g, pos=pos, K=K, init_step=step, max_iter=1)  
@@ -405,30 +438,17 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                         colors = np.random.uniform(0.4, 0.9, len(y_pos))
                         sizes = []
                         for v in g.vertices():
-                            # nodes_x.append(pos[v][0])
-                            # nodes_y.append(pos[v][1])
-                            sizes.append(dynamic_node_size)
-                        ax.scatter(x_pos, y_pos, c=colors, s=sizes, cmap='summer', zorder=1, linewidths=dynamic_edge_width, edgecolors='black', alpha=0.8)
-                        # ax.scatter(nodes_x, nodes_y, c=colors, s=sizes, edgecolors='white', linewidths=dynamic_edge_width, alpha=0.5, zorder=1, cmap='summer')
+                            v_idx = vertex_index_map[v]
+                            is_excitatory = (v_idx in excitatory_nodes) or (v_idx in excitatory_inputs)
+                            if is_excitatory:
+                                sizes.append(dynamic_node_size)
+                            else:  
+                                sizes.append(dynamic_node_size * 0.75)  # Inhibitory nodes slightly smaller
+                        ax.scatter(x_pos, y_pos, c=colors, s=sizes, alpha=0.8, linewidth=dynamic_edge_width, edgecolors='grey', zorder=1, cmap='summer')
                         
-                        # Get all edges in the graph
                         edges_list = list(g.edges())
                         subsample_rate = max(1, len(edges_list) // 5000000)  # Increase the number of edges shown
-                        plotted_ee_edges = 0
-                        plotted_ei_edges = 0
-                        plotted_ie_edges = 0
-                        plotted_ii_edges = 0
-                        plotted_input_ee_edges = 0
-                        plotted_input_ii_edges = 0
-                        # Create node type map for both regular and input nodes (local copy)
-                        node_types = {}
-                        for i, node_info in enumerate(nodes_data): # Map regular network nodes
-                            node_type = node_info['type'] 
-                            node_types[i] = 'Exc' if node_type.startswith('E') else 'Inh'
-                        for j, input_node_info in enumerate(input_nodes_data): 
-                            input_node_type = input_node_info['type'] 
-                            node_types[num_nodes + j] = 'Exc' if input_node_type.startswith('E') else 'Inh'
-
+                        
                         # Initialize edge lists
                         ee_edges = []
                         ei_edges = []
@@ -457,6 +477,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                 elif src_type == 'Inh' and tgt_type == 'Inh':
                                     ii_edges.append(e)
 
+                       
                         # Plot EE edges (Excitatory to Excitatory)
                         if len(ee_edges) > 0:
                             subsample_rate = max(1, len(ee_edges) // 5000000)  # Adjust subsample rate for EE edges
@@ -467,8 +488,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     s1, t1 = current_edge
                                     ee_x_coords = [pos[s1][0], pos[t1][0]]
                                     ee_y_coords = [pos[s1][1], pos[t1][1]]
-                                    ax.plot(ee_x_coords, ee_y_coords, 'red', zorder=5, alpha=0.9, linewidth=dynamic_edge_width * 1.5, linestyle='-')
-                                plotted_ee_edges += 1 * len([current_edge]) 
+                                    ax.plot(ee_x_coords, ee_y_coords, 'red', zorder=2, alpha=0.7, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(ee_x_coords, ee_y_coords, c='red', s=dynamic_edge_width * 10, alpha=0.7, zorder=2, edgecolors='white', linewidth=dynamic_edge_width * 0.5)  # Add small points for better visibility
+                                    plotted_ee_edges += 1
+
                         # Plot EI edges (Excitatory to Inhibitory)
                         if len(ei_edges) > 0:
                             subsample_rate = max(1, len(ei_edges) // 5000000)
@@ -479,9 +502,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     s1, t1 = current_edge
                                     ei_x_coords = [pos[s1][0], pos[t1][0]]
                                     ei_y_coords = [pos[s1][1], pos[t1][1]]
-                                    ax.plot(ei_x_coords, ei_y_coords, 'pink', zorder=4, alpha=0.9, linewidth=dynamic_edge_width * 0.8, linestyle='-')
-                                plotted_ei_edges += 1 * len([current_edge])
-                        
+                                    ax.plot(ei_x_coords, ei_y_coords, 'pink', zorder=1, alpha=0.7, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(ei_x_coords, ei_y_coords, c='pink', s=dynamic_edge_width * 10, alpha=0.7, zorder=1, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
+                                    plotted_ei_edges += 1
+
                         # Plot IE edges (Inhibitory to Excitatory)
                         if len(ie_edges) > 0:
                             subsample_rate = max(1, len(ie_edges) // 5000000)
@@ -492,8 +516,9 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     s1, t1 = current_edge
                                     ie_x_coords = [pos[s1][0], pos[t1][0]]
                                     ie_y_coords = [pos[s1][1], pos[t1][1]]
-                                    ax.plot(ie_x_coords, ie_y_coords, 'green', zorder=6, alpha=0.9, linewidth=dynamic_edge_width * 0.7, linestyle='-')
-                                plotted_ie_edges += 1 * len([current_edge])
+                                    ax.plot(ie_x_coords, ie_y_coords, 'green', zorder=3, alpha=0.7, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(ie_x_coords, ie_y_coords, c='green', s=dynamic_edge_width * 10, alpha=0.7, zorder=3, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
+                                    plotted_ie_edges += 1
                         
                         # Plot II edges (Inhibitory to Inhibitory)
                         if len(ii_edges) > 0:
@@ -505,8 +530,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     s1, t1 = current_edge
                                     ii_x_coords = [pos[s1][0], pos[t1][0]]
                                     ii_y_coords = [pos[s1][1], pos[t1][1]]
-                                    ax.plot(ii_x_coords, ii_y_coords, 'blue', zorder=7, alpha=0.9, linewidth=dynamic_edge_width * 0.5, linestyle='-')
-                                plotted_ii_edges += 1 * len([current_edge])
+                                    ax.plot(ii_x_coords, ii_y_coords, 'blue', zorder=4, alpha=0.7, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(ii_x_coords, ii_y_coords, c='blue', s=dynamic_edge_width * 10, alpha=0.7, zorder=4, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
+                                    plotted_ii_edges += 1
+
                         
                         # Plot Input_EE edges
                         if len(input_ee_edges) > 0:
@@ -518,8 +545,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     s1, t1 = current_edge
                                     input_ee_x_coords = [pos[s1][0], pos[t1][0]]
                                     input_ee_y_coords = [pos[s1][1], pos[t1][1]]
-                                    ax.plot(input_ee_x_coords, input_ee_y_coords, 'gold', zorder=6, alpha=0.9, linewidth=dynamic_edge_width * 1.2, linestyle='-')
-                                plotted_input_ee_edges += 1 * len([current_edge])
+                                    ax.plot(input_ee_x_coords, input_ee_y_coords, 'gold', zorder=8, alpha=0.7, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(input_ee_x_coords, input_ee_y_coords, c='gold', s=dynamic_edge_width * 10, alpha=0.7, zorder=8, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
+                                    plotted_input_ee_edges += 1
+
                         
                         # Plot Input_II edges
                         if len(input_ii_edges) > 0:
@@ -531,8 +560,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                                     s1, t1 = current_edge
                                     input_ii_x_coords = [pos[s1][0], pos[t1][0]]
                                     input_ii_y_coords = [pos[s1][1], pos[t1][1]]
-                                    ax.plot(input_ii_x_coords, input_ii_y_coords, 'purple', zorder=7, alpha=0.9, linewidth=dynamic_edge_width * 0.9, linestyle='-')
-                                plotted_input_ii_edges += 1 * len([current_edge])
+                                    ax.plot(input_ii_x_coords, input_ii_y_coords, 'purple', zorder=9, alpha=0.7, linewidth=dynamic_edge_width * 1.5, linestyle='-')
+                                    ax.scatter(input_ii_x_coords, input_ii_y_coords, c='purple', s=dynamic_edge_width * 10, alpha=0.7, zorder=9,edgecolors='white', linewidth=dynamic_edge_width * 0.5)
+                                    plotted_input_ii_edges += 1
+
                         
                         from matplotlib.lines import Line2D
                         legend_elements = [
@@ -543,7 +574,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300):
                             Line2D([0], [0], color='gold', lw=2, label='Input EE Edges'),
                             Line2D([0], [0], color='purple', lw=2, label='Input II Edges'),
                         ]
-                        ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=8)
+                        ax.legend(handles=legend_elements, loc='upper left', frameon=True, fontsize=8)
                         ax.set_title(f'{network_name} Dynamic layout: Frame {count}\n EE: {len(ee_edges)} | EI: {len(ei_edges)} | IE: {len(ie_edges)} | II: {len(ii_edges)} | Input_EE: {len(input_ee_edges)} | Input_II: {len(input_ii_edges)}', fontsize=10)
                         ax.set_aspect('equal')
                         

@@ -569,7 +569,7 @@ def calibrate_single_network_robust(gt_file, output_dir, use_weights=True, norma
     
     # Save results
     output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
     
     # Validate that all metric arrays have the correct length
     total_vertices = G.num_vertices()
@@ -625,9 +625,16 @@ def calibrate_all_networks_robust(input_pattern, output_dir, use_weights=True, n
         # Treat as glob pattern
         gt_files = list(Path('.').glob(input_pattern))
     else:
-        # Treat as directory
+        # Treat as directory (search recursively for .gt files in subfolders)
         input_path = Path(input_pattern)
-        gt_files = list(input_path.glob("*.gt"))
+        if input_path.is_dir():
+            gt_files = list(input_path.rglob("*.gt"))
+        else:
+            # If a single .gt file path was provided, use it if it exists
+            if input_path.suffix == '.gt' and input_path.exists():
+                gt_files = [input_path]
+            else:
+                gt_files = []
     
     if not gt_files:
         logger.warning(f"No *.gt files found with pattern/dir: {input_pattern}")
@@ -671,8 +678,8 @@ def main():
         """
     )
     
-    parser.add_argument("--input-dir", default="metrics-analysis-project/*.gt", 
-                       help="Input directory containing *.gt files OR glob pattern like 'metrics-analysis-project/*.gt' (default: metrics-analysis-project/*.gt)")
+    parser.add_argument("--input-dir", default="metrics/*/*.gt",
+                       help="Input directory containing *.gt files OR glob pattern like 'metrics/*/*.gt' (default: metrics/*/*.gt)")
     parser.add_argument("--output-dir", default="robust_calibrated", 
                        help="Output directory for calibrated results (default: robust_calibrated)")
     parser.add_argument("--no-weights", dest="use_weights", action="store_false",

@@ -113,12 +113,13 @@ def run_and_plot_pair(label_a, func_a, label_b, func_b, G_factory, steps=200, ou
         plt.gcf().text(0.5, 0.94, caption, ha='center', va='top', fontsize=10)  # Lowered from 0.96 to 0.94
     else:
         plt.title(f'Artistic Comparison: {label_a} vs {label_b} (p-value: {p_value:.3e})', y=0.85)
-    plt.plot(x, smean1, color=palette[0], linewidth=2.6)
-    plt.plot(x, smean2, color=palette[1], linewidth=2.6)
+    plt.plot(x, smean1, label=f'{label_a} (smoothed)', color=palette[0], linewidth=2.6)
+    plt.plot(x, smean2, label=f'{label_b} (smoothed)', color=palette[1], linewidth=2.6)
     plt.fill_between(x, np.clip(smean1 - std1, 0, 1), np.clip(smean1 + std1, 0, 1), color=palette[0], alpha=0.12)
     plt.fill_between(x, np.clip(smean2 - std2, 0, 1), np.clip(smean2 + std2, 0, 1), color=palette[1], alpha=0.12)
     plt.xlabel('Step')
     plt.ylabel('Fraction infected')
+    plt.legend()
     plt.tight_layout(rect=(0, 0.03, 1, 0.82))  # Reduced top margin from 0.92 to 0.82
     # save only artistic variant
     plt.savefig(OUT_DIR / art_name)
@@ -155,8 +156,6 @@ def run_and_plot_triple(labels, funcs, G_factory, steps=200, out_name="triple.pn
     plt.ylabel('Fraction infected')
     # Removed fixed ylim(-0.01, 1.01) to allow auto-scaling that shows actual algorithm differences
     plt.legend()
-    # add mathtext caption for artistic triple (placed above title)
-    # triple_caption = ' | '.join([f"{lab}: {_formula_for_label(lab)}" for lab in labels])
     
     # Display each algorithm's formula on separate lines with much more spacing for multi-line formulas
     fig = plt.gcf()
@@ -167,7 +166,6 @@ def run_and_plot_triple(labels, funcs, G_factory, steps=200, out_name="triple.pn
             fig.text(0.5, y_positions[i], f"{lab}: {formula}", ha='center', va='top', fontsize=9)
     
     plt.title(f'Triple Comparison (ANOVA p-value: {p_value:.3e})', y=0.82)  # Lowered further to accommodate formulas
-    # plt.gcf().text(0.5, 0.94, triple_caption, ha='center', va='top', fontsize=9)  # Lowered from 0.96 to 0.94
     plt.tight_layout(rect=(0, 0.03, 1, 0.80))  # Reduced top margin further to 0.80
     art_triple = out_name.replace('.png', '_artistic.png')
     plt.savefig(OUT_DIR / art_triple)

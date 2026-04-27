@@ -55,11 +55,6 @@ setup(
             "myst-parser>=0.15.0",
         ],
     },
-    entry_points={
-        "console_scripts": [
-            "analyze-network-metrics=network_metrics_package.main:main",
-        ],
-    },
     include_package_data=True,
     zip_safe=False,
 )

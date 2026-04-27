@@ -271,7 +271,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     inactive_count += 1
                 elif curr_state[v] == R:  # refractory
                     refractory_count += 1
-            print(f"Frame {count}: Active={active_count} | Inactive={inactive_count} | Refractory={refractory_count}")
+            print(f"Frame {count}: Active(I)={active_count} | Inactive(S)={inactive_count} | Refractory(R)={refractory_count}")
             
             # Randomly make a few nodes initially infected to start the simulation
             if count == 0 and active_count == 0:
@@ -325,11 +325,9 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     # Create a matplotlib figure for this frame with dynamic dimensions
                     fig, ax = plt.subplots(1, 1, figsize=(12, 12), dpi=150)
                     fig.patch.set_facecolor('white')  # Set figure background to white
-                    
                     # Extract positions for plotting
                     x_pos = [pos[v][0] for v in g.vertices()]
                     y_pos = [pos[v][1] for v in g.vertices()]
-                    
                     colors = []
                     sizes = []
                     for v in g.vertices():
@@ -351,7 +349,6 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     if active_x_pos:
                         ax.scatter(active_x_pos, active_y_pos, c=active_colors, # cmap='autumn', 
                                    s=acitve_sizes, alpha=0.5, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
-
                     inactive_x_pos = []
                     inactive_y_pos = []
                     inactive_colors = []
@@ -365,7 +362,6 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     if inactive_x_pos:
                         ax.scatter(inactive_x_pos, inactive_y_pos, c=inactive_colors, # cmap='tab20c', 
                                    s=inactive_sizes, alpha=0.5, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
-
                     refractory_x_pos = []
                     refractory_y_pos = []
                     refrac_colors = []
@@ -410,10 +406,13 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 dst_state = curr_state[t1]
                             if scr_state == I or dst_state == I:
                                 ax.plot(x_coords, y_coords, 'red', alpha=0.7, linewidth=dynamic_edge_width, linestyle='--')
+                                # ax.scatter(x_coords, y_coords, c='red', s=dynamic_edge_width*10, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                             elif scr_state == R or dst_state == R:
-                                ax.plot(x_coords, y_coords, 'gold', alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='-')
+                                ax.plot(x_coords, y_coords, 'pink', alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='-')
+                                # ax.scatter(x_coords, y_coords,c='pink',s=dynamic_edge_width*10, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                             elif scr_state == S or dst_state == S:
-                                ax.plot(x_coords, y_coords, 'blue', alpha=0.3, linewidth=dynamic_edge_width * 0.5, linestyle=':')
+                                ax.plot(x_coords, y_coords, 'blue', alpha=0.3, linewidth=dynamic_edge_width * 0.5, linestyle='-.')
+                                # ax.scatter(x_coords, y_coords,c='blue',s=dynamic_edge_width*10, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                             plotted_edges += 1
                     if len(renewal_input_edges) > 0:
                             subsample_rate = max(1, len(renewal_input_edges) // 100000000)  # the more edges the delicate
@@ -427,24 +426,27 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                     scr_state = curr_state[s1]
                                     dst_state = curr_state[t1]
                                 if scr_state == I or dst_state == I:
-                                    ax.plot(input_x_coords, input_y_coords, 'purple', alpha=0.7, linewidth=dynamic_edge_width, linestyle='--')
+                                    ax.plot(input_x_coords, input_y_coords, 'gold', alpha=0.7, linewidth=dynamic_edge_width, linestyle='--')
+                                    # ax.scatter(x_coords, y_coords, c='gold', s=dynamic_edge_width*10, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                                 elif scr_state == R or dst_state == R:
-                                    ax.plot(input_x_coords, input_y_coords, 'lightcoral', alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='-')
+                                    ax.plot(input_x_coords, input_y_coords, 'yellow', alpha=0.5, linewidth=dynamic_edge_width * 0.7, linestyle='-')
+                                    # ax.scatter(x_coords, y_coords, c='yellow', s=dynamic_edge_width*10, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                                 elif scr_state == S or dst_state == S:
-                                    ax.plot(input_x_coords, input_y_coords, 'green', alpha=0.3, linewidth=dynamic_edge_width * 0.5, linestyle=':')
+                                    ax.plot(input_x_coords, input_y_coords, 'navy', alpha=0.3, linewidth=dynamic_edge_width * 0.5, linestyle=':')
+                                    # ax.scatter(x_coords, y_coords, c='navy', s=dynamic_edge_width*10, edgecolors='white', linewidth=dynamic_edge_width * 0.5)
                                 plotted_input_edges += 1
                     
                     from matplotlib.lines import Line2D
                     legend_elements = [
                         Line2D([0], [0], color='red', lw=2, label='I (Edges)', linestyle='--', alpha=0.7),
-                        Line2D([0], [0], color='gold', lw=2, label='R (Edges)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='blue', lw=2, label='S (Edges)', linestyle=':', alpha=0.3),
-                        Line2D([0], [0], color='purple', lw=2, label='I (Input Edges)', linestyle='--', alpha=0.7),
-                        Line2D([0], [0], color='lightcoral', lw=2, label='R (Input Edges)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='green', lw=2, label='S (Input Edges)', linestyle=':', alpha=0.3),
+                        Line2D([0], [0], color='gold', lw=2, label='I (Input Edges)', linestyle='--', alpha=0.7),
+                        Line2D([0], [0], color='pink', lw=2, label='R (Edges)', linestyle='-', alpha=0.5),
+                        Line2D([0], [0], color='yellow', lw=2, label='R (Input Edges)', linestyle='-', alpha=0.5),
+                        Line2D([0], [0], color='blue', lw=2, label='S (Edges)', linestyle='-.', alpha=0.3),
+                        Line2D([0], [0], color='navy', lw=2, label='S (Input Edges)', linestyle=':', alpha=0.3),
                     ]
                     ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=12)
-                    ax.set_title(f'{network_name} S->I->R->S epidemic model: Frame {count}\n Active={active_count} | Inactive={inactive_count} | Refractory={refractory_count}')
+                    ax.set_title(f'{network_name} S->I->R->S epidemic model: Frame {count}\n Active(I)={active_count} | Inactive(S)={inactive_count} | Refractory(R)={refractory_count}')
                     ax.set_aspect('equal')
                     
                     # Set fixed axis limits to ensure consistent frame sizes

@@ -2,12 +2,6 @@
 import os
 import sys
 import time
-# Add the network_metrics_package directory to sys.path for local imports
-script_dir = os.path.dirname(os.path.abspath(__file__))
-network_metrics_path = os.path.join(script_dir, "src", "network_metrics_package")
-if network_metrics_path not in sys.path:
-    sys.path.insert(0, network_metrics_path)
-
 os.environ['GDK_BACKEND'] = 'broadway'
 os.environ['GSK_RENDERER'] = 'cairo'
 os.environ["OMP_WAIT_POLICY"] = "active"
@@ -456,16 +450,15 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
         
         # Animation creation
         #############################################################################################################################
-        # prev_exc_state = G.new_vp("vector<double>")
-        # curr_exc_state = G.new_vp("vector<double>")
-        # prev_inh_state = G.new_vp("vector<double>")
-        # curr_inh_state = G.new_vp("vector<double>")
-        # exc_transmited = G.new_vp("bool")
-        # inh_transmited = G.new_vp("bool")
-        # exc_refractory = G.new_vp("bool")
-        # inh_refractory = G.new_vp("bool")
+        prev_exc_state = G.new_vp("vector<double>")
+        curr_exc_state = G.new_vp("vector<double>")
+        prev_inh_state = G.new_vp("vector<double>")
+        curr_inh_state = G.new_vp("vector<double>")
+        exc_transmited = G.new_vp("bool")
+        inh_transmited = G.new_vp("bool")
+        exc_refractory = G.new_vp("bool")
+        inh_refractory = G.new_vp("bool")
         w = gt.max_cardinality_matching(G, edges=True, heuristic=True, brute_force=True)
-        # edge_weight is already created after graph replacement, so we don't need to create it again
         def create_graph_tool_animation(G, pos, state, output_file, vertex_fill_color=None,
                                         vertex_color=None, vertex_size=None, edge_color=None, 
                                         edge_pen_width=None, frames=10, mode="graph_draw", **kwargs):
@@ -478,67 +471,67 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                 inh_pop_vertex = [v for v in G.vertices() if vprop_name[v] == pop.id and vprop_type[v] == 'inh']
                 exc_input_vertex = [v for v in G.vertices() if vprop_name[v] != pop.id and vprop_type[v] == 'exc']
                 inh_input_vertex = [v for v in G.vertices() if vprop_name[v] != pop.id and vprop_type[v] == 'inh']
-                # exc_inactive_pop = int(progress * len(exc_pop_vertex))  
-                # inh_inactive_pop = int(progress * len(inh_pop_vertex))
-                # exc_active_pop = int(progress * 0.7 * len(exc_pop_vertex)) 
-                # inh_active_pop = int(progress * 0.6 * len(inh_pop_vertex)) 
-                # exc_refrac_pop = int(progress * 0.3 * len(exc_pop_vertex))
-                # inh_refrac_pop = int(progress * 0.4 * len(inh_pop_vertex))
-                # exc_inactive_input = int(progress * len(exc_input_vertex))
-                # inh_inactive_input = int(progress * len(inh_input_vertex))
-                # exc_active_input = int(progress * 0.7 * len(exc_input_vertex))
-                # inh_active_input = int(progress * 0.6 * len(inh_input_vertex))
-                # exc_refrac_input = int(progress * 0.3 * len(exc_input_vertex))
-                # inh_refrac_input = int(progress * 0.4 * len(inh_input_vertex))
+                exc_inactive_pop = int(progress * len(exc_pop_vertex))  
+                inh_inactive_pop = int(progress * len(inh_pop_vertex))
+                exc_active_pop = int(progress * 0.7 * len(exc_pop_vertex)) 
+                inh_active_pop = int(progress * 0.6 * len(inh_pop_vertex)) 
+                exc_refrac_pop = int(progress * 0.3 * len(exc_pop_vertex))
+                inh_refrac_pop = int(progress * 0.4 * len(inh_pop_vertex))
+                exc_inactive_input = int(progress * len(exc_input_vertex))
+                inh_inactive_input = int(progress * len(inh_input_vertex))
+                exc_active_input = int(progress * 0.7 * len(exc_input_vertex))
+                inh_active_input = int(progress * 0.6 * len(inh_input_vertex))
+                exc_refrac_input = int(progress * 0.3 * len(exc_input_vertex))
+                inh_refrac_input = int(progress * 0.4 * len(inh_input_vertex))
 
-                # for idx, v in enumerate(G.vertices()):
-                #     prev_exc_state[v] = list(matplotlib.cm.viridis(0.1))[:4] # exc_S
-                #     prev_inh_state[v] = list(matplotlib.cm.viridis_r(0.1))[:4] # inh_S
-                #     curr_exc_state[v] = prev_exc_state[v]
-                #     curr_inh_state[v] = prev_inh_state[v]
-                #     exc_refractory.a = False
-                #     exc_transmited.a = False
-                #     inh_refractory.a = False
-                #     inh_transmited.a = False
-                #     vertex_type = vprop_type[v]
-                #     if vertex_type == 'exc':
-                #         if idx < exc_refrac_pop:
-                #             curr_exc_state[v] = list(matplotlib.cm.viridis(0.5))[:4] # exc_R  # Refractory state
-                #             exc_refractory[v] = True
-                #         elif idx < exc_active_pop:
-                #             curr_exc_state[v] = list(matplotlib.cm.viridis(0.8))[:4] # exc_I  # Active state
-                #             exc_transmited[v] = True
-                #         elif idx < exc_inactive_pop:
-                #             curr_exc_state[v] = list(matplotlib.cm.viridis(0.3))[:4] # exc_S  # Inactive state
-                #         elif idx < exc_refrac_input:
-                #             curr_exc_state[v] = list(matplotlib.cm.viridis_r(0.6))[:5]
-                #             exc_refractory[v] = True
-                #         elif idx < exc_active_input:
-                #             curr_exc_state[v] = list(matplotlib.cm.viridis_r(0.9))[:5]
-                #             exc_transmited[v] = True
-                #         elif idx < exc_inactive_input:
-                #             curr_exc_state[v] = list(matplotlib.cm.viridis(0.4))[:5]
+                for idx, v in enumerate(G.vertices()):
+                    prev_exc_state[v] = list(matplotlib.cm.viridis(0.1))[:4] # exc_S
+                    prev_inh_state[v] = list(matplotlib.cm.viridis_r(0.1))[:4] # inh_S
+                    curr_exc_state[v] = prev_exc_state[v]
+                    curr_inh_state[v] = prev_inh_state[v]
+                    exc_refractory.a = False
+                    exc_transmited.a = False
+                    inh_refractory.a = False
+                    inh_transmited.a = False
+                    vertex_type = vprop_type[v]
+                    if vertex_type == 'exc':
+                        if idx < exc_refrac_pop:
+                            curr_exc_state[v] = list(matplotlib.cm.viridis(0.5))[:4] # exc_R  # Refractory state
+                            exc_refractory[v] = True
+                        elif idx < exc_active_pop:
+                            curr_exc_state[v] = list(matplotlib.cm.viridis(0.8))[:4] # exc_I  # Active state
+                            exc_transmited[v] = True
+                        elif idx < exc_inactive_pop:
+                            curr_exc_state[v] = list(matplotlib.cm.viridis(0.3))[:4] # exc_S  # Inactive state
+                        elif idx < exc_refrac_input:
+                            curr_exc_state[v] = list(matplotlib.cm.viridis_r(0.6))[:5]
+                            exc_refractory[v] = True
+                        elif idx < exc_active_input:
+                            curr_exc_state[v] = list(matplotlib.cm.viridis_r(0.9))[:5]
+                            exc_transmited[v] = True
+                        elif idx < exc_inactive_input:
+                            curr_exc_state[v] = list(matplotlib.cm.viridis(0.4))[:5]
 
-                #     elif vertex_type == 'inh':
-                #         if idx < inh_refrac_pop:
-                #             curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.5))[:4] # inh_R
-                #             inh_refractory[v] = True
-                #         elif idx < inh_active_pop:
-                #             curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.8))[:4] # inh_I
-                #             inh_transmited[v] = True
-                #         elif idx < inh_inactive_pop:
-                #             curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.3))[:4] # inh_S
-                #         elif idx < inh_refrac_input:
-                #             curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.4))[:3]
-                #             inh_refractory[v] = True
-                #         elif idx < inh_active_input:
-                #             curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.7))[:3]
-                #             inh_transmited[v] = True
-                #         elif idx < inh_inactive_input:
-                #             curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.2))[:3]
-                #     else:
-                #         curr_exc_state[v] = prev_exc_state[v]
-                #         curr_inh_state[v] = prev_inh_state[v]
+                    elif vertex_type == 'inh':
+                        if idx < inh_refrac_pop:
+                            curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.5))[:4] # inh_R
+                            inh_refractory[v] = True
+                        elif idx < inh_active_pop:
+                            curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.8))[:4] # inh_I
+                            inh_transmited[v] = True
+                        elif idx < inh_inactive_pop:
+                            curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.3))[:4] # inh_S
+                        elif idx < inh_refrac_input:
+                            curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.4))[:3]
+                            inh_refractory[v] = True
+                        elif idx < inh_active_input:
+                            curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.7))[:3]
+                            inh_transmited[v] = True
+                        elif idx < inh_inactive_input:
+                            curr_inh_state[v] = list(matplotlib.cm.viridis_r(0.2))[:3]
+                    else:
+                        curr_exc_state[v] = prev_exc_state[v]
+                        curr_inh_state[v] = prev_inh_state[v]
                 
                 ee_edges = []
                 ii_edges = []
@@ -616,7 +609,6 @@ def visualize_network(nml_net_file, p_intra, p_inter, base_name):
                     computed_vertex_fill_color = gt.perfect_prop_hash([state_prop])[0]
                 else:
                     computed_vertex_fill_color = vertex_fill_color
-                
                 computed_vertex_shape = computed_vertex_fill_color
                 gt.graph_draw(
                     G, pos=fixed_pos,
@@ -821,8 +813,8 @@ if __name__ == "__main__":
     nml_net_files = [
         os.path.join(script_dir, "net_files/TC2CT.net.nml"),
         # os.path.join(script_dir, "net_files/TC2PT.net.nml"),
-        # os.path.join(script_dir, "net_files/TC2IT4_IT2CT.net.nml"),
-        # os.path.join(script_dir, "net_files/TC2IT2PTCT.net.nml"),
+        os.path.join(script_dir, "net_files/TC2IT4_IT2CT.net.nml"),
+        os.path.join(script_dir, "net_files/TC2IT2PTCT.net.nml"),
         # os.path.join(script_dir, "net_files/C2T_max_plus.net.nml"),
         # os.path.join(script_dir, "net_files/iC_max.net.nml"),
         # os.path.join(script_dir, "net_files/T2C_max_plus.net.nml"),

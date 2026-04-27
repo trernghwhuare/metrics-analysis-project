@@ -33,13 +33,13 @@ seed(42)
 seed_rng(42)
 
 # Constants for layout
-step = 0.02       # move step
-K = 2            # preferred edge length
+step = 0.2       # move step
+K = 0.8          # preferred edge length
 
 # SIRS Model parameters
-x = 0.004   # spontaneous outbreak probability
-r = 0.4     # I->R probability
-s = 0.04    # R->S probability
+x = 0.02   # spontaneous outbreak probability
+r = 0.8     # I->R probability
+s = 0.2    # R->S probability
 
 # Create colormaps for the three states
 cmap_S = plt.get_cmap('tab20c')    # inactive state colormap
@@ -183,7 +183,8 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
             edge_count += 1
         input_id_to_index = {}
         for i, node_info in enumerate(input_nodes_data):
-            input_id_to_index[node_info['component']] = i 
+            input_id_to_index[node_info['component']] = num_nodes + i  # Offset by num_nodes
+        
         inhibitory_inputs = set()
         excitatory_inputs = set()
         for node_info in input_nodes_data:
@@ -213,7 +214,6 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
             density = total_edges / total_nodes
         else:
             density = 0
-        
         # Create node type mapping for edge classification
         node_types = {}
         for i, node_info in enumerate(nodes_data): # Map regular network nodes
@@ -249,12 +249,12 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     ii_count += 1
         
         # Calculate densities for each edge type
-        ee_density = ee_count / total_nodes if total_nodes > 0 else 0
-        ei_density = ei_count / total_nodes if total_nodes > 0 else 0
-        ie_density = ie_count / total_nodes if total_nodes > 0 else 0
-        ii_density = ii_count / total_nodes if total_nodes > 0 else 0
-        input_ee_density = input_ee_count / total_nodes if total_nodes > 0 else 0
-        input_ii_density = input_ii_count / total_nodes if total_nodes > 0 else 0
+        ee_density = ee_count / total_edges if total_edges > 0 else 0
+        ei_density = ei_count / total_edges if total_edges > 0 else 0
+        ie_density = ie_count / total_edges if total_edges > 0 else 0
+        ii_density = ii_count / total_edges if total_edges > 0 else 0
+        input_ee_density = input_ee_count / total_edges if total_edges > 0 else 0
+        input_ii_density = input_ii_count / total_edges if total_edges > 0 else 0
         
         # Set dynamic_node_size based on overall network density
         if density <= 2.0:
@@ -278,13 +278,13 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                 return max(1.2, 2.0 - (edge_density * 0.3))
             elif edge_density <= 5.0:
                 # Medium density edges: medium lines
-                return max(0.7, 1.2 - (np.log10(edge_density) * 0.2))
+                return max(0.5, 1.0 - (np.log10(edge_density) * 0.2))
             elif edge_density <= 20.0:
                 # Dense edges: thin lines
-                return max(0.3, 0.7 - (np.log10(edge_density) * 0.1))
+                return max(0.1, 0.3 - (np.log10(edge_density) * 0.1))
             else:
                 # Very dense edges: very thin lines
-                return max(0.1, 0.3 / np.log10(edge_density))
+                return max(0.05, 0.1 / np.log10(edge_density))
         
         # Calculate specific edge widths for each type
         ee_edge_width = calculate_edge_width(ee_density)
@@ -299,7 +299,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
         
         # Adjusted parameters for smoother animation
         x = 0.02   # spontaneous outbreak probability
-        r = 1    # I->R probability
+        r = 0.8    # I->R probability
         s = 0.2   # R->S probability
 
         ini_exc_state = g.new_vertex_property("vector<double>")
@@ -312,9 +312,22 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
         prev_exc_state = g.new_vertex_property("vector<double>")
         curr_inh_state = g.new_vertex_property("vector<double>")
         prev_inh_state = g.new_vertex_property("vector<double>")
+        
+        # Create vertex index map for proper initialization
+        vertex_index_map = {v: i for i, v in enumerate(g.vertices())}
+        
+        # Initialize states based on node type
         for v in g.vertices():
-            prev_exc_state[v] = ini_exc_state[v] = exc_S
-            prev_inh_state[v] = ini_inh_state[v] = inh_S
+            v_idx = vertex_index_map[v]
+            is_excitatory = (v_idx in excitatory_nodes) or (v_idx in excitatory_inputs)
+            is_inhibitory = (v_idx in inhibitory_nodes) or (v_idx in inhibitory_inputs)
+            
+            if is_excitatory:
+                curr_exc_state[v] = exc_S
+                prev_exc_state[v] = exc_S
+            if is_inhibitory:
+                curr_inh_state[v] = inh_S  
+                prev_inh_state[v] = inh_S
 
         newly_exc_transmited = g.new_vertex_property("bool")
         newly_inh_transmited = g.new_vertex_property("bool")
@@ -342,7 +355,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
         
         # This function will be called repeatedly to update the vertex layout
         def update_state():
-            nonlocal count, edges, frame_limits, all_x_positions, all_y_positions, vertex_index_map
+            nonlocal count, frame_limits, all_x_positions, all_y_positions, vertex_index_map
             newly_exc_transmited.a = False
             newly_inh_transmited.a = False
             exc_refractory.a = False
@@ -359,31 +372,25 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
             # Count current states before updating
             for v in g.vertices():
                 v_idx = vertex_index_map[v]
-                
-                # Check if this is an excitatory node (regular or input)
                 is_excitatory = (v_idx in excitatory_nodes) or (v_idx in excitatory_inputs)
-                # Check if this is an inhibitory node (regular or input)
                 is_inhibitory = (v_idx in inhibitory_nodes) or (v_idx in inhibitory_inputs)
+                
                 if is_excitatory:
                     if curr_exc_state[v] == exc_I:  # active
                         exc_active_count += 1
-                        # newly_exc_transmited[v] = True
                     elif curr_exc_state[v] == exc_S:  # inactive
                         exc_inactive_count += 1
                     elif curr_exc_state[v] == exc_R:  # refractory
                         exc_refractory_count += 1
-                        # exc_refractory[v] = True
 
                 if is_inhibitory:
                     if curr_inh_state[v] == inh_I:  # active
                         inh_active_count += 1
-                        # newly_inh_transmited[v] = True
                     elif curr_inh_state[v] == inh_S:  # inactive
                         inh_inactive_count += 1
                     elif curr_inh_state[v] == inh_R:  # refractory
                         inh_refractory_count += 1
-                        # inh_refractory[v] = True
-            print(f"Frame {count} exc_I={exc_active_count} | exc_S={exc_inactive_count} | exc_R={exc_refractory_count} inh_I={inh_active_count} | inh_S={inh_inactive_count} | inh_R={inh_refractory_count}")
+            print(f"Frame {count} Excitatory: Active(I)={exc_active_count} | Inactive(S)={exc_inactive_count} | Refractory(R)={exc_refractory_count}\n Inhibitory: Active(I)={inh_active_count} | Inactive(S)={inh_inactive_count} | Refractory(R)={inh_refractory_count}")
             
             # Randomly make a few nodes initially infected to start the simulation
             if count == 0 and exc_active_count == 0 and inh_active_count == 0:
@@ -396,7 +403,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                 exc_input_nodes = [v for v in vs if vertex_index_map[v] in excitatory_inputs]
                 inh_input_nodes = [v for v in vs if vertex_index_map[v] in inhibitory_inputs]
 
-                num_initial_exc_infections = min(20, len(exc_nodes), len(exc_input_nodes))
+                num_initial_exc_infections = min(5, len(exc_nodes), len(exc_input_nodes))
                 for i in range(num_initial_exc_infections):
                     if i < len(exc_nodes):
                         curr_exc_state[exc_nodes[i]] = exc_I
@@ -406,11 +413,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                         newly_exc_transmited[exc_input_nodes[i]] = True
                         
                 # Infect inhibitory nodes
-                num_initial_inh_infections = min(20, len(inh_nodes), len(inh_input_nodes))
+                num_initial_inh_infections = min(5, len(inh_nodes), len(inh_input_nodes))
                 for i in range(num_initial_inh_infections):
                     if i < len(inh_nodes):
                         curr_inh_state[inh_nodes[i]] = inh_I
-                        newly_inh_transmited[inh_input_nodes[i]] = True
+                        newly_inh_transmited[inh_nodes[i]] = True
                     if i < len(inh_input_nodes):
                         curr_inh_state[inh_input_nodes[i]] = inh_I
                         newly_inh_transmited[inh_input_nodes[i]] = True
@@ -483,12 +490,8 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                 try:
                     # Create a matplotlib figure for this frame with even dimensions
                     fig, ax = plt.subplots(1, 1, figsize=(12, 12), dpi=150)
-                    
-                    # Extract positions for plotting
                     x_pos = [pos[v][0] for v in g.vertices()]
                     y_pos = [pos[v][1] for v in g.vertices()]
-                    
-                    # Interpolate colors for smoother transition
                     colors = []
                     sizes = []
                     for v in g.vertices():
@@ -501,8 +504,8 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                         else:  
                             inh_state = ini_inh_state[v]
                             colors.append(state_to_rgba(inh_state))
-                            sizes.append(dynamic_node_size* 0.65)
-                    ax.scatter(x_pos, y_pos, c=colors, s=sizes, alpha=0.9, edgecolors='white', linewidth=ee_edge_width * 0.5)
+                            sizes.append(dynamic_node_size* 0.75)
+                    ax.scatter(x_pos, y_pos, c=colors, s=sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=1)
 
                     # Draw halos around active vertices for better visibility
                     exc_active_x_pos = []
@@ -518,18 +521,18 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             exc_active_x_pos.append(pos[v][0])
                             exc_active_y_pos.append(pos[v][1])
                             exc_active_colors.append(state_to_rgba(curr_exc_state[v]))
-                            exc_active_sizes.append(dynamic_node_size * 2.0)
+                            exc_active_sizes.append(dynamic_node_size * 1.2)
                         elif curr_inh_state[v] == inh_I:  # If vertex is active (infected)
                             inh_active_x_pos.append(pos[v][0])
                             inh_active_y_pos.append(pos[v][1])
                             inh_active_colors.append(state_to_rgba(curr_inh_state[v]))
-                            inh_active_sizes.append(dynamic_node_size * 1.5)
+                            inh_active_sizes.append(dynamic_node_size * 1.2)
                     if exc_active_x_pos:
-                        ax.scatter(exc_active_x_pos, exc_active_y_pos, c=exc_active_colors, # cmap='autumn', 
-                                   s=exc_active_sizes, alpha=0.9, edgecolors='white', linewidth=ee_edge_width * 0.8, zorder=3)
+                        ax.scatter(exc_active_x_pos, exc_active_y_pos, c=exc_active_colors,
+                                   s=exc_active_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.8, zorder=2)
                     elif inh_active_x_pos:
-                        ax.scatter(inh_active_x_pos, inh_active_y_pos, c=inh_active_colors, # cmap='autumn_r', 
-                                   s=inh_active_sizes, alpha=0.9, edgecolors='white', linewidth=ee_edge_width * 0.8, zorder=3)
+                        ax.scatter(inh_active_x_pos, inh_active_y_pos, c=inh_active_colors,
+                                   s=inh_active_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.8, zorder=2)
 
                     exc_inactive_x_pos = []
                     exc_inactive_y_pos = []
@@ -549,13 +552,13 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             inh_inactive_x_pos.append(pos[v][0])
                             inh_inactive_y_pos.append(pos[v][1])
                             inh_inactive_colors.append(state_to_rgba(curr_inh_state[v]))
-                            inh_inactive_sizes.append(dynamic_node_size * 0.6)
+                            inh_inactive_sizes.append(dynamic_node_size * 0.8)
                     if exc_inactive_x_pos:
-                        ax.scatter(exc_inactive_x_pos, exc_inactive_y_pos, c=exc_inactive_colors, # cmap='tab20c', 
-                                   s=exc_inactive_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=1)
+                        ax.scatter(exc_inactive_x_pos, exc_inactive_y_pos, c=exc_inactive_colors,
+                                   s=exc_inactive_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=2)
                     elif inh_inactive_x_pos:
-                        ax.scatter(inh_inactive_x_pos, inh_inactive_y_pos, c=inh_inactive_colors, # cmap='tab20c_r', 
-                                   s=inh_inactive_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=1)
+                        ax.scatter(inh_inactive_x_pos, inh_inactive_y_pos, c=inh_inactive_colors, 
+                                   s=inh_inactive_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=2)
 
                     exc_refractory_x_pos = []
                     exc_refractory_y_pos = []
@@ -570,18 +573,18 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             exc_refractory_x_pos.append(pos[v][0])
                             exc_refractory_y_pos.append(pos[v][1])
                             exc_refrac_colors.append(state_to_rgba(curr_exc_state[v]))
-                            exc_refrac_sizes.append(dynamic_node_size * 1.5)
+                            exc_refrac_sizes.append(dynamic_node_size * 1.2)
                         elif curr_inh_state[v] == inh_R:
                             inh_refractory_x_pos.append(pos[v][0])
                             inh_refractory_y_pos.append(pos[v][1])
                             inh_refrac_colors.append(state_to_rgba(curr_inh_state[v]))
                             inh_refrac_sizes.append(dynamic_node_size * 1.2)
                     if exc_refractory_x_pos:
-                        ax.scatter(exc_refractory_x_pos, exc_refractory_y_pos, c=exc_refrac_colors, # cmap='viridis', 
-                                   s=exc_refrac_sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width* 0.6, zorder=2)
+                        ax.scatter(exc_refractory_x_pos, exc_refractory_y_pos, c=exc_refrac_colors, 
+                                   s=exc_refrac_sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width * 0.7, zorder=2)
                     elif inh_refractory_x_pos:
-                        ax.scatter(inh_refractory_x_pos, inh_refractory_y_pos, c=inh_refrac_colors, # cmap='viridis_r', 
-                                   s=inh_refrac_sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width* 0.6, zorder=2)
+                        ax.scatter(inh_refractory_x_pos, inh_refractory_y_pos, c=inh_refrac_colors, 
+                                   s=inh_refrac_sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width * 0.7, zorder=2)
                     ax.set_facecolor('white')  # Set axes background to white
                     
                     # Plot edges
@@ -638,11 +641,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_i_state = curr_inh_state[ees]
                                 dst_i_state = curr_inh_state[eet]
                             if src_e_state == exc_I or dst_e_state == exc_I:  # If either node is active
-                                ax.plot(ee_x_coords, ee_y_coords, 'red',alpha=1.0, linewidth=ee_edge_width* 0.7, linestyle='-', zorder=3)
+                                ax.plot(ee_x_coords, ee_y_coords, 'red', alpha=0.7, linewidth=ee_edge_width* 0.7 , linestyle='-', zorder=3)
                             elif src_e_state == exc_R or dst_e_state == exc_R:  # If either node is refractory
-                                ax.plot(ee_x_coords, ee_y_coords, 'blue',alpha=0.7, linewidth=ee_edge_width* 0.6, linestyle='-', zorder=2)
+                                ax.plot(ee_x_coords, ee_y_coords, 'coral', alpha=0.5, linewidth=ee_edge_width* 0.7, linestyle='-', zorder=3)
                             elif src_e_state == exc_S or dst_e_state == exc_S:
-                                ax.plot(ee_x_coords, ee_y_coords, 'green', alpha=0.5, linewidth=ee_edge_width * 0.5, linestyle='-', zorder=1)
+                                ax.plot(ee_x_coords, ee_y_coords, 'blue', alpha=0.3, linewidth=ee_edge_width * 0.7, linestyle='-', zorder=3)
                             plotted_ee_edges += 1
                     # Plot Input_EE edges
                     if len(input_ee_edges) > 0:
@@ -659,11 +662,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_i_state = curr_inh_state[ees1]
                                 dst_i_state = curr_inh_state[eet1]
                             if src_e_state == exc_I or dst_e_state == exc_I:
-                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'magenta', zorder=3, alpha=0.9, linewidth=input_ee_edge_width* 0.7, linestyle='-')
+                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'gold',  alpha=0.7, linewidth=input_ee_edge_width * 0.7, linestyle=(0, (5, 1)), zorder=3)
                             elif src_e_state == exc_R or dst_e_state == exc_R:
-                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'lightgreen', zorder=3, alpha=0.7, linewidth=input_ee_edge_width* 0.6, linestyle='-')
+                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'cyan', alpha=0.5, linewidth=input_ee_edge_width* 0.7, linestyle=(0, (5, 1)), zorder=3)
                             else:
-                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'lightcoral', zorder=3, alpha=0.5, linewidth=input_ee_edge_width * 0.5, linestyle='-')
+                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'purple', alpha=0.3, linewidth=input_ee_edge_width * 0.7, linestyle=(0, (5, 1)), zorder=3)
                             plotted_input_ee_edges += 1            
                     if len(ii_edges) > 0:
                         subsample_rate = max(1, len(ii_edges) // 5000000)  # Adjust subsample rate for II edges
@@ -679,11 +682,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_i_state = curr_inh_state[iis]
                                 dst_i_state = curr_inh_state[iit]              
                             if src_i_state == inh_I or dst_i_state == inh_I:
-                                ax.plot(ii_x_coords, ii_y_coords, 'purple', alpha=1.0, linewidth=ii_edge_width* 0.7, linestyle='-', zorder=3)
+                                ax.plot(ii_x_coords, ii_y_coords, 'red', alpha=0.7, linewidth=ii_edge_width * 0.7, linestyle='--', zorder=3)
                             elif src_i_state == inh_R or dst_i_state == inh_R:
-                                ax.plot(ii_x_coords, ii_y_coords, 'orange', alpha=0.7, linewidth=ii_edge_width* 0.6, linestyle='-', zorder=2)
+                                ax.plot(ii_x_coords, ii_y_coords, 'coral', alpha=0.5, linewidth=ii_edge_width * 0.7, linestyle='--', zorder=3)
                             elif src_i_state == inh_S or dst_i_state == inh_S:
-                                ax.plot(ii_x_coords, ii_y_coords, 'darkgreen', alpha=0.5, linewidth=ii_edge_width * 0.5, linestyle='-', zorder=1)
+                                ax.plot(ii_x_coords, ii_y_coords, 'blue', alpha=0.3, linewidth=ii_edge_width * 0.7, linestyle='--', zorder=3)
                             plotted_ii_edges += 1
                     if len(input_ii_edges) > 0:
                         subsample_rate = max(1, len(input_ii_edges) // 5000000)
@@ -699,11 +702,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_i_state = curr_inh_state[iis1]
                                 dst_i_state = curr_inh_state[iit1]
                             if src_i_state == inh_I or dst_i_state == inh_I:
-                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'cyan', zorder=3, alpha=0.9, linewidth=input_ii_edge_width* 0.7, linestyle='-')
+                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'gold',  alpha=0.7, linewidth=input_ii_edge_width * 0.7, linestyle=(5, (10, 3)), zorder=3)
                             elif src_i_state == inh_R or dst_i_state == inh_R:
-                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'yellowgreen', zorder=3, alpha=0.7, linewidth=input_ii_edge_width* 0.6, linestyle='-')
+                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'cyan', alpha=0.5, linewidth=input_ii_edge_width * 0.7, linestyle=(5, (10, 3)), zorder=3)
                             else:
-                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'violet', zorder=3, alpha=0.5, linewidth=input_ii_edge_width * 0.5, linestyle='-')
+                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'purple',  alpha=0.3, linewidth=input_ii_edge_width * 0.7, linestyle=(5, (10, 3)), zorder=3)
                             plotted_input_ii_edges += 1
                     if len(ei_edges) > 0:
                         subsample_rate = max(1, len(ei_edges) // 5000000)  # Adjust subsample rate for EI edges
@@ -719,11 +722,11 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_i_state = curr_inh_state[eis]
                                 dst_i_state = curr_inh_state[eit]                                
                             if src_e_state == exc_I or dst_i_state == inh_I:
-                                ax.plot(ei_x_coords, ei_y_coords, 'darkred', alpha=1.0, linewidth=ei_edge_width* 0.7, linestyle=':', zorder=3)
+                                ax.plot(ei_x_coords, ei_y_coords, 'red', alpha=0.7, linewidth=ei_edge_width * 0.7, linestyle=(0, (5, 1)), zorder=3)
                             elif src_e_state == exc_R or dst_i_state == inh_R:
-                                ax.plot(ei_x_coords, ei_y_coords, 'lime',  alpha=0.7, linewidth=ei_edge_width* 0.6, linestyle=':', zorder=2)
+                                ax.plot(ei_x_coords, ei_y_coords, 'coral',  alpha=0.5, linewidth=ei_edge_width * 0.7, linestyle=(0, (5, 1)), zorder=3)
                             elif src_e_state == exc_S or dst_i_state == inh_S:
-                                ax.plot(ei_x_coords, ei_y_coords, 'grey',  alpha=0.5, linewidth=ei_edge_width * 0.5, linestyle=':', zorder=1)
+                                ax.plot(ei_x_coords, ei_y_coords, 'blue',  alpha=0.3, linewidth=ei_edge_width * 0.7, linestyle=(0, (5, 1)), zorder=3)
                             plotted_ei_edges += 1
                     if len(ie_edges) > 0:
                         subsample_rate = max(1, len(ie_edges) // 5000000)  # Adjust subsample rate for IE edges
@@ -739,36 +742,39 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                                 src_i_state = curr_inh_state[ies]
                                 dst_i_state = curr_inh_state[iet]
                             if src_i_state == inh_I or dst_e_state == exc_I:
-                                ax.plot(ie_x_coords, ie_y_coords, 'pink',  alpha=1.0, linewidth=ie_edge_width* 0.7, linestyle=':', zorder=3)
+                                ax.plot(ie_x_coords, ie_y_coords, 'red', alpha=0.7, linewidth=ie_edge_width* 0.7, linestyle=(5, (10, 3)), zorder=3)
                             elif src_i_state == inh_R or dst_e_state == exc_R:
-                                ax.plot(ie_x_coords, ie_y_coords, 'yellow', alpha=0.7, linewidth=ie_edge_width* 0.6, linestyle=':', zorder=2)
+                                ax.plot(ie_x_coords, ie_y_coords, 'coral', alpha=0.5, linewidth=ie_edge_width* 0.7, linestyle=(5, (10, 3)), zorder=3)
                             elif src_i_state == inh_S or dst_e_state == exc_S:
-                                ax.plot(ie_x_coords, ie_y_coords, 'black', alpha=0.5, linewidth=ie_edge_width * 0.5, linestyle=':', zorder=1)
+                                ax.plot(ie_x_coords, ie_y_coords, 'blue', alpha=0.3, linewidth=ie_edge_width * 0.7, linestyle=(5, (10, 3)), zorder=3)
                             plotted_ie_edges += 1
                     from matplotlib.lines import Line2D
                     legend_elements = [
-                        Line2D([0], [0], color='red', lw=2, label='exc_I (EE)', linestyle='-', alpha=1.0),
-                        Line2D([0], [0], color='blue', lw=2, label='exc_R (EE)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='green', lw=2, label='exc_S (EE)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='purple', lw=2, label='inh_I (II)', linestyle='-', alpha=1.0),
-                        Line2D([0], [0], color='orange', lw=2, label='inh_R (II)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='darkgreen', lw=2, label='inh_S (II)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='darkred', lw=2, label='exc_I -> inh_I (EI)', linestyle=':', alpha=1.0),
-                        Line2D([0], [0], color='lime', lw=2, label='exc_R -> inh_R (EI)', linestyle=':', alpha=0.7),
-                        Line2D([0], [0], color='grey', lw=2, label='exc_S -> inh_S (EI)', linestyle=':', alpha=0.5),
-                        Line2D([0], [0], color='pink', lw=2, label='inh_I -> exc_I (IE)', linestyle=':', alpha=1.0),
-                        Line2D([0], [0], color='yellow', lw=2, label='inh_R -> exc_R (IE)', linestyle=':', alpha=0.7),
-                        Line2D([0], [0], color='black', lw=2, label='inh_S -> exc_S (IE)', linestyle=':', alpha=0.5),
-                        Line2D([0], [0], color='magenta', lw=2, label='exc_I (Input_EE)', linestyle='-', alpha=0.9),
-                        Line2D([0], [0], color='cyan', lw=2, label='inh_I (Input_II)', linestyle='-', alpha=0.9),
-                        Line2D([0], [0], color='lightgreen', lw=2, label='exc_R (Input_EE)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='yellowgreen', lw=2, label='inh_R (Input_II)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='lightcoral', lw=2, label='exc_S (Input_EE)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='violet', lw=2, label='inh_S (Input_II)', linestyle='-', alpha=0.5),
+                        Line2D([0], [0], color='red', lw=2, label='I (EE)', linestyle='-', alpha=0.7),
+                        Line2D([0], [0], color='red', lw=2, label='I (II)', linestyle='--', alpha=0.7),
+                        Line2D([0], [0], color='red', lw=2, label='I (EI)', linestyle=(0, (5, 1)), alpha=0.7),
+                        Line2D([0], [0], color='red', lw=2, label='I (IE)', linestyle=(5, (10, 3)), alpha=0.7),
+                        
+                        Line2D([0], [0], color='coral', lw=2, label='R (EE)', linestyle='-', alpha=0.5),
+                        Line2D([0], [0], color='coral', lw=2, label='R (II)', linestyle='--', alpha=0.5),
+                        Line2D([0], [0], color='coral', lw=2, label='R (EI)', linestyle=(0, (5, 1)), alpha=0.5),
+                        Line2D([0], [0], color='coral', lw=2, label='R (IE)', linestyle=(5, (10, 3)), alpha=0.5),
+                        
+                        Line2D([0], [0], color='blue', lw=2, label='S (EE)', linestyle='-', alpha=0.3),
+                        Line2D([0], [0], color='blue', lw=2, label='S (II)', linestyle='--', alpha=0.3),
+                        Line2D([0], [0], color='blue', lw=2, label='S (EI)', linestyle=(0, (5, 1)), alpha=0.3),
+                        Line2D([0], [0], color='blue', lw=2, label='S (IE)', linestyle=(5, (10, 3)), alpha=0.3),
+
+                        Line2D([0], [0], color='gold', lw=2, label='I (Input_EE)', linestyle=(0, (5, 1)), alpha=0.7),
+                        Line2D([0], [0], color='gold', lw=2, label='I (Input_II)', linestyle=(5, (10, 3)), alpha=0.7),
+                        Line2D([0], [0], color='cyan', lw=2, label='R (Input_EE)', linestyle=(0, (5, 1)), alpha=0.5),
+                        Line2D([0], [0], color='cyan', lw=2, label='R (Input_II)', linestyle=(5, (10, 3)), alpha=0.5),
+                        Line2D([0], [0], color='purple', lw=2, label='S (Input_EE)', linestyle=(0, (5, 1)), alpha=0.3),
+                        Line2D([0], [0], color='purple', lw=2, label='S (Input_II)', linestyle=(5, (10, 3)), alpha=0.3),
                     ]
-                    ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=8)
+                    ax.legend(handles=legend_elements, loc='upper left', frameon=True, fontsize=8)
                     
-                    ax.set_title(f'{network_name} S->I->R->S epidemic model Frame {count}\n exc_I={exc_active_count} | exc_S={exc_inactive_count} | exc_R={exc_refractory_count}\n inh_I={inh_active_count} | inh_S={inh_inactive_count} | inh_R={inh_refractory_count}')
+                    ax.set_title(f'{network_name} S->I->R->S epidemic model Frame {count}\n Excitatory: Active(I)={exc_active_count} | Inactive(S)={exc_inactive_count} | Refractory(R)={exc_refractory_count}\n Inhibitory: Active(I)={inh_active_count} | Inactive(S)={inh_inactive_count} | Refractory(R)={inh_refractory_count}')
                     ax.set_aspect('equal')
                     
                     # Set fixed axis limits to ensure consistent frame sizes
@@ -828,12 +834,12 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
             print(f"\nFrames saved to {network_frames_dir}/ directory")
             print("\nTo combine frames into a video, you can use ffmpeg:")
             print(f"ffmpeg -framerate 10 -pattern_type glob -i '{network_frames_dir}/frame_*.png' -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' -c:v libx264 -pix_fmt yuv420p {network_name}_state_adv.mp4")
-            print("\nFor large networks (>1000 nodes), use lower resolution to avoid memory issues:")
-            print(f"ffmpeg -framerate 10 -pattern_type glob -i '{network_frames_dir}/frame_*.png' -vf 'scale=1920:1080' -c:v libx264 -pix_fmt yuv420p {network_name}_state_adv.mp4")
+            print("\nFor large networks with multiple node types, maintain full resolution for detailed visualization:")
+            print(f"ffmpeg -framerate 10 -pattern_type glob -i '{network_frames_dir}/frame_*.png' -c:v libx264 -pix_fmt yuv420p -crf 18 {network_name}_state_adv.mp4")
             print("\nAlternatively, you can create an animated GIF using ImageMagick:")
             print(f"convert -delay 5 {network_frames_dir}/*.png {network_name}_state_adv.gif")
             print("\nOr create an animated GIF with optimization:")
-            print(f"convert -delay 5 -loop 0 {network_frames_dir}/*.png -scale 1200x1200 -coalesce -fuzz 5% -layers Optimize {network_name}_state_adv.gif")
+            print(f"convert -delay 5 -loop 0 {network_frames_dir}/*.png -coalesce -fuzz 5% -layers Optimize {network_name}_state_adv.gif")
             print("\nThis will create an animated GIF from the saved frames.")
             print("\nTo run without saving frames, use: python gt_state_adv.py no_offscreen")
         else:

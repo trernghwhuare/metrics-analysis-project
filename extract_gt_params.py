@@ -990,11 +990,11 @@ def calculate_block_counts(parameters, m_intra=0.05, m_inter=0.95, e_intra=0.5, 
             except Exception as e:
                 logging.info(f"Warning: Error in blockmodel inference: {e}")
                 # Fallback to approximation
-                num_conn_edges = parameters['num_conn_edges']
+                num_edges= parameters['num_edges']
                 num_input_edges = parameters['num_input_edges']
-                full_edges = num_conn_edges + num_input_edges
-                main_blocks_ndc = max(1, int(np.sqrt(num_conn_edges / 2)))
-                main_blocks_dc = max(1, int(np.sqrt(num_conn_edges / 2) * 1.1))
+                full_edges = num_edges + num_input_edges
+                main_blocks_ndc = max(1, int(np.sqrt(num_edges/ 2)))
+                main_blocks_dc = max(1, int(np.sqrt(num_edges/ 2) * 1.1))
                 ilist_blocks_ndc = max(1, int(np.sqrt(num_input_edges / 2)))
                 ilist_blocks_dc = max(1, int(np.sqrt(num_input_edges / 2) * 1.1))
                 full_blocks_ndc = max(1, int(np.sqrt(full_edges / 2)))
@@ -1012,17 +1012,17 @@ def calculate_block_counts(parameters, m_intra=0.05, m_inter=0.95, e_intra=0.5, 
         continuous_projections = parameters.get('continuous_projections', [])
         electrical_projections = parameters.get('electrical_projections', [])
         
-        num_conn_edges = sum(len(proj.get('connections', [])) for proj in continuous_projections) + \
-                     sum(len(proj.get('connections', [])) for proj in electrical_projections)
-        
+        # num_edges= sum(len(proj.get('connections', [])) for proj in continuous_projections) + \
+        #              sum(len(proj.get('connections', [])) for proj in electrical_projections)
+        num_edges = len(parameters['continuous_projections']) + len(parameters['electrical_projections'])
         # Calculate num_input_edges from input_edges
         input_edges = parameters.get('input_edges', [])
         num_input_edges = len(input_edges)
         
-        full_edges = num_conn_edges + num_input_edges
+        full_edges = num_edges + num_input_edges
         
         # Base estimation with correction
-        main_estimate = np.sqrt(num_conn_edges / 2) if num_conn_edges > 0 else 1
+        main_estimate = np.sqrt(num_edges / 2) if num_edges > 0 else 1
         main_blocks_ndc = max(1, int(main_estimate))
         main_blocks_dc = max(1, int(main_estimate * 1.1))
         ilist_estimate = np.sqrt(num_input_edges / 2) if num_input_edges > 0 else 1
@@ -1038,23 +1038,24 @@ def calculate_block_counts(parameters, m_intra=0.05, m_inter=0.95, e_intra=0.5, 
     electrical_projections = parameters.get('electrical_projections', [])
     
     # Total main edges (excluding input edges)
-    total_num_conn_edges = sum(len(proj.get('connections', [])) for proj in continuous_projections) + \
-                       sum(len(proj.get('connections', [])) for proj in electrical_projections)
+    # num_edges= sum(len(proj.get('connections', [])) for proj in continuous_projections) + \
+    #                    sum(len(proj.get('connections', [])) for proj in electrical_projections)
+    num_edges = len(parameters['continuous_projections']) + len(parameters['electrical_projections'])
     
     # Approximate inter/intra counts based on population types
-    inter_region_edges = max(1, total_num_conn_edges // 3)  # Approximate: 1/3 are inter-region
-    intra_region_edges = total_num_conn_edges - inter_region_edges  # Remaining are intra-region
+    inter_region_edges = max(1, num_edges // 3)  # Approximate: 1/3 are inter-region
+    intra_region_edges = num_edges - inter_region_edges  # Remaining are intra-region
     
-    inter_layer_edges = max(1, total_num_conn_edges // 4)  # Approximate: 1/4 are inter-layer
-    intra_layer_edges = total_num_conn_edges - inter_layer_edges  # Remaining are intra-layer
+    inter_layer_edges = max(1, num_edges // 4)  # Approximate: 1/4 are inter-layer
+    intra_layer_edges = num_edges - inter_layer_edges  # Remaining are intra-layer
     
     # Estimate based on population types
-    inter_e_type_edges = max(1, total_num_conn_edges // 3)  # Approximate: 1/3 are inter-e_type
-    intra_e_type_edges = total_num_conn_edges - inter_e_type_edges  # Remaining are intra-e_type
+    inter_e_type_edges = max(1, num_edges // 3)  # Approximate: 1/3 are inter-e_type
+    intra_e_type_edges = num_edges - inter_e_type_edges  # Remaining are intra-e_type
     
     # Vprefix and m_type edges - use similar approximations
-    inter_vprefix_edges = max(1, total_num_conn_edges // 4)  # Approximate: 1/4 are inter-vprefix
-    intra_vprefix_edges = total_num_conn_edges - inter_vprefix_edges  # Remaining are intra-vprefix
+    inter_vprefix_edges = max(1, num_edges // 4)  # Approximate: 1/4 are inter-vprefix
+    intra_vprefix_edges = num_edges - inter_vprefix_edges  # Remaining are intra-vprefix
     
     total_e_type_edges = inter_e_type_edges + intra_e_type_edges
     total_layer_edges = inter_layer_edges + intra_layer_edges
@@ -1120,26 +1121,27 @@ def save_gt_params_to_json(parameters, block_counts, network_metrics, base_name,
     elect_proj = len(electrical_projections)
     
     # Calculate various types of edges
-    num_conn_edges = sum(len(proj.get('connections', [])) for proj in continuous_projections) + \
-                 sum(len(proj.get('connections', [])) for proj in electrical_projections)
+    # num_edges= sum(len(proj.get('connections', [])) for proj in continuous_projections) + \
+    #              sum(len(proj.get('connections', [])) for proj in electrical_projections)
+    num_edges = len(parameters['continuous_projections']) + len(parameters['electrical_projections'])
     
     # Calculate inter/intra edges approximately based on population types
-    total_num_conn_edges = num_conn_edges
-    inter_region_edges = max(1, total_num_conn_edges // 3)  # Approximate: 1/3 are inter-region
-    intra_region_edges = total_num_conn_edges - inter_region_edges
+    # num_edges= num_conn_edges
+    inter_region_edges = max(1, num_edges // 3)  # Approximate: 1/3 are inter-region
+    intra_region_edges = num_edges - inter_region_edges
     
-    inter_layer_edges = max(1, total_num_conn_edges // 4)  # Approximate: 1/4 are inter-layer
-    intra_layer_edges = total_num_conn_edges - inter_layer_edges
+    inter_layer_edges = max(1, num_edges // 4)  # Approximate: 1/4 are inter-layer
+    intra_layer_edges = num_edges - inter_layer_edges
     
     # Estimate based on population types
-    inter_e_type_edges = max(1, total_num_conn_edges // 3)  # Approximate: 1/3 are inter-e_type
-    intra_e_type_edges = total_num_conn_edges - inter_e_type_edges
+    inter_e_type_edges = max(1, num_edges // 3)  # Approximate: 1/3 are inter-e_type
+    intra_e_type_edges = num_edges - inter_e_type_edges
     
     # Vprefix and m_type edges - use similar approximations
-    inter_m_type_edges = max(1, total_num_conn_edges // 3)
-    intra_m_type_edges = total_num_conn_edges - inter_m_type_edges
-    inter_vprefix_edges = max(1, total_num_conn_edges // 4)
-    intra_vprefix_edges = total_num_conn_edges - inter_vprefix_edges
+    inter_m_type_edges = max(1, num_edges // 3)
+    intra_m_type_edges = num_edges - inter_m_type_edges
+    inter_vprefix_edges = max(1, num_edges // 4)
+    intra_vprefix_edges = num_edges - inter_vprefix_edges
     
     # Get input edges
     input_edges = parameters.get('input_edges', [])
@@ -1162,7 +1164,7 @@ def save_gt_params_to_json(parameters, block_counts, network_metrics, base_name,
         'Inter-m_type_edges': inter_m_type_edges,
         'Intra-Vprefix_edges': intra_vprefix_edges,
         'Inter-Vprefix_edges': inter_vprefix_edges,
-        'num_conn_edges': num_conn_edges,
+        'num_edges': num_edges,
         'num_input_edges': num_input_edges,
         # Network metrics with properly escaped Unicode
         'Nodes': network_metrics['Nodes'],
@@ -1200,7 +1202,7 @@ def save_gt_params_to_json(parameters, block_counts, network_metrics, base_name,
         # If the block_counts or parameters carried graph stats, include them
         meta['num_pop_nodes'] = parameters.get('num_pop_nodes') or parameters.get('num_pop_nodes') or None
         meta['num_input_nodes'] = parameters.get('num_input_vertices')
-        meta['num_conn_edges'] = parameters.get('num_conn_edges')
+        meta['num_edges'] = parameters.get('num_edges')
         meta['num_input_edges'] = parameters.get('num_input_edges')
         # Block-count summaries
         meta['main_blocks_ndc'] = block_counts.get('main_blocks_ndc')
@@ -1425,9 +1427,18 @@ def process_single_file(nml_file, output_arg):
     """Process a single NeuroML file."""
     # Determine base name and output directory
     if output_arg:
-        # If output is provided, split it into directory and base name
-        output_dir = os.path.dirname(output_arg) or "gt/params"
-        base_name = os.path.basename(output_arg)
+        # Check if output_arg is intended to be a directory
+        # If output_arg ends with '/' or exists as a directory, treat it as directory only
+        if output_arg.endswith('/') or output_arg.endswith('\\') or os.path.isdir(output_arg):
+            # output_arg is a directory, use it as output_dir and derive base_name from nml_file
+            output_dir = output_arg
+            base_name = os.path.basename(nml_file)
+            while '.' in base_name:
+                base_name = os.path.splitext(base_name)[0]
+        else:
+            # output_arg is a full path including filename, split into directory and base name
+            output_dir = os.path.dirname(output_arg) or "gt/params"
+            base_name = os.path.basename(output_arg)
         # Create directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
     else:

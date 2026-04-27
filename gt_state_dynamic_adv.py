@@ -284,12 +284,12 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     ii_count += 1
         
         # Calculate densities for each edge type
-        ee_density = ee_count / total_nodes if total_nodes > 0 else 0
-        ei_density = ei_count / total_nodes if total_nodes > 0 else 0
-        ie_density = ie_count / total_nodes if total_nodes > 0 else 0
-        ii_density = ii_count / total_nodes if total_nodes > 0 else 0
-        input_ee_density = input_ee_count / total_nodes if total_nodes > 0 else 0
-        input_ii_density = input_ii_count / total_nodes if total_nodes > 0 else 0
+        ee_density = ee_count / total_edges if total_edges > 0 else 0
+        ei_density = ei_count / total_edges if total_edges > 0 else 0
+        ie_density = ie_count / total_edges if total_edges > 0 else 0
+        ii_density = ii_count / total_edges if total_edges > 0 else 0
+        input_ee_density = input_ee_count / total_edges if total_edges > 0 else 0
+        input_ii_density = input_ii_count / total_edges if total_edges > 0 else 0
         
         # Set dynamic_node_size based on overall network density
         if density <= 2.0:
@@ -313,13 +313,13 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                 return max(1.2, 2.0 - (edge_density * 0.3))
             elif edge_density <= 5.0:
                 # Medium density edges: medium lines
-                return max(0.7, 1.2 - (np.log10(edge_density) * 0.2))
+                return max(0.5, 1.0 - (np.log10(edge_density) * 0.2))
             elif edge_density <= 20.0:
                 # Dense edges: thin lines
-                return max(0.3, 0.7 - (np.log10(edge_density) * 0.1))
+                return max(0.1, 0.3 - (np.log10(edge_density) * 0.1))
             else:
                 # Very dense edges: very thin lines
-                return max(0.1, 0.3 / np.log10(edge_density))
+                return max(0.05, 0.1 / np.log10(edge_density))
         
         # Calculate specific edge widths for each type
         ee_edge_width = calculate_edge_width(ee_density)
@@ -373,7 +373,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
         
         # This function will be called repeatedly to update the vertex layout and states
         def update_state():
-            nonlocal count, all_x_positions, all_y_positions, vertex_index_map, edge_index_map
+            nonlocal count, edges, all_x_positions, all_y_positions, vertex_index_map, edge_index_map
             # Reset properties
             newly_exc_transmited.a = False
             newly_inh_transmited.a = False
@@ -555,7 +555,7 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             inh_state = ini_inh_state[v]
                             colors.append(state_to_rgba(inh_state))
                             sizes.append(dynamic_node_size * 0.75)  # Inhibitory nodes slightly smaller
-                    ax.scatter(x_pos, y_pos, c=colors, s=sizes, alpha=0.9, edgecolors='white', linewidth=ee_edge_width * 0.5)
+                    ax.scatter(x_pos, y_pos, c=colors, s=sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=1)
 
                     # Draw halos around active vertices for better visibility
                     exc_active_x_pos = []
@@ -579,10 +579,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             inh_active_sizes.append(dynamic_node_size * 1.5)  # Active inhibitory nodes larger but smaller than excitatory
                     if exc_active_x_pos:
                         ax.scatter(exc_active_x_pos, exc_active_y_pos, c=exc_active_colors, # cmap='autumn', 
-                                   s=exc_active_sizes, alpha=0.9, edgecolors='white', linewidth=ee_edge_width * 0.8, zorder=3)
+                                   s=exc_active_sizes, alpha=0.5, zorder=2, edgecolors='white', linewidth=ee_edge_width * 0.8)
                     elif inh_active_x_pos:
                         ax.scatter(inh_active_x_pos, inh_active_y_pos, c=inh_active_colors, # cmap='autumn_r', 
-                                   s=inh_active_sizes, alpha=0.9, edgecolors='white', linewidth=ee_edge_width * 0.8, zorder=3)
+                                   s=inh_active_sizes, alpha=0.5, zorder=2, edgecolors='white', linewidth=ee_edge_width * 0.8)
 
                     exc_inactive_x_pos = []
                     exc_inactive_y_pos = []
@@ -605,10 +605,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             inh_inactive_sizes.append(dynamic_node_size * 0.6)  # Smaller inhibitory inactive nodes
                     if exc_inactive_x_pos:
                         ax.scatter(exc_inactive_x_pos, exc_inactive_y_pos, c=exc_inactive_colors, # cmap='tab20c', 
-                                   s=exc_inactive_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=1)
+                                   s=exc_inactive_sizes, alpha=0.5, zorder=2, edgecolors='white', linewidth=ee_edge_width * 0.5)
                     elif inh_inactive_x_pos:
                         ax.scatter(inh_inactive_x_pos, inh_inactive_y_pos, c=inh_inactive_colors, # cmap='tab20c_r', 
-                                   s=inh_inactive_sizes, alpha=0.5, edgecolors='white', linewidth=ee_edge_width * 0.5, zorder=1)
+                                   s=inh_inactive_sizes, alpha=0.5, zorder=2, edgecolors='white', linewidth=ee_edge_width * 0.5)
 
                     exc_refractory_x_pos = []
                     exc_refractory_y_pos = []
@@ -631,10 +631,10 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                             inh_refrac_sizes.append(dynamic_node_size * 1.2)  # Refractory inhibitory nodes
                     if exc_refractory_x_pos:
                         ax.scatter(exc_refractory_x_pos, exc_refractory_y_pos, c=exc_refrac_colors, # cmap='viridis', 
-                                   s=exc_refrac_sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width * 0.7, zorder=2)
+                                   s=exc_refrac_sizes, alpha=0.5, zorder=2, edgecolors='white', linewidth=ee_edge_width * 0.7)
                     elif inh_refractory_x_pos:
                         ax.scatter(inh_refractory_x_pos, inh_refractory_y_pos, c=inh_refrac_colors, # cmap='viridis_r', 
-                                   s=inh_refrac_sizes, alpha=0.7, edgecolors='white', linewidth=ee_edge_width * 0.7, zorder=2)
+                                   s=inh_refrac_sizes, alpha=0.5, zorder=2, edgecolors='white', linewidth=ee_edge_width * 0.7)
                     ax.set_facecolor('white')  # Set axes background to white
 
                     # Plot edges with enhanced visualization
@@ -644,20 +644,15 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                     plotted_ei_edges = 0
                     plotted_ie_edges = 0
                     plotted_ii_edges = 0
-                    node_types = {}
-                    for i, node_info in enumerate(nodes_data): # Map regular network nodes
-                        node_type = node_info['type'] 
-                        node_types[i] = 'Exc' if node_type.startswith('E') else 'Inh'
-                    for j, input_node_info in enumerate(input_nodes_data): # Map input nodes 
-                        input_node_type = input_node_info['type'] 
-                        node_types[num_nodes + j] = 'Exc' if input_node_type.startswith('E') else 'Inh'
-
-                    ee_edges = []
-                    ei_edges = []
-                    ie_edges = []
-                    ii_edges = []
-                    input_ee_edges = []
-                    input_ii_edges = []
+                    plotted_input_ee_edges = 0
+                    plotted_input_ii_edges = 0
+                    
+                    renewal_ee_edges = []
+                    renewal_ei_edges = []
+                    renewal_ie_edges = []
+                    renewal_ii_edges = []
+                    renewal_input_ee_edges = []
+                    renewal_input_ii_edges = []
                     for e in edges_list:
                         src_idx = int(e.source())
                         tgt_idx = int(e.target())
@@ -666,161 +661,173 @@ def process_network(network_name, data_dir="gt/params", max_count=300, no_offscr
                         is_input_edge = src_idx >= num_nodes
                         if is_input_edge:
                             if src_type == 'Exc':  # Source is excitatory
-                                input_ee_edges.append(e)
+                                renewal_input_ee_edges.append(e)
                             elif src_type == 'Inh':  # Source is inhibitory
-                                input_ii_edges.append(e)
+                                renewal_input_ii_edges.append(e)
                         else:
                             # Internal edges classified by both source and target
                             if src_type == 'Exc' and tgt_type == 'Exc':
-                                ee_edges.append(e)
+                                renewal_ee_edges.append(e)
                             elif src_type == 'Exc' and tgt_type == 'Inh':
-                                ei_edges.append(e)
+                                renewal_ei_edges.append(e)
                             elif src_type == 'Inh' and tgt_type == 'Exc':
-                                ie_edges.append(e)
+                                renewal_ie_edges.append(e)
                             elif src_type == 'Inh' and tgt_type == 'Inh':
-                                ii_edges.append(e)
+                                renewal_ii_edges.append(e)
                 
-                    if len(ee_edges) > 0:
-                        subsample_rate = max(1, len(ee_edges) // 5000000)  # Adjust subsample rate for EE edges
+                    if len(renewal_ee_edges) > 0:
+                        subsample_rate = max(1, len(renewal_ee_edges) // 5000000)  # Adjust subsample rate for EE edges
                         plotted_ee_edges = 0
-                        for edge_idx, current_edge in enumerate(ee_edges):
-                            current_edge = ee_edges[edge_idx]
+                        for edge_idx, current_edge in enumerate(renewal_ee_edges):
+                            current_edge = renewal_ee_edges[edge_idx]
                             if edge_idx % subsample_rate == 0 and plotted_ee_edges < 5000000:
-                                s1, t1 = current_edge
-                                ee_x_coords = [pos[s1][0], pos[t1][0]]
-                                ee_y_coords = [pos[s1][1], pos[t1][1]]
-                                src_exc_state = curr_exc_state[s1]
-                                dst_exc_state = curr_exc_state[t1]
-                                if src_exc_state == exc_I or dst_exc_state == exc_I:  # If either node is active
-                                    ax.plot(ee_x_coords, ee_y_coords, 'red', zorder=3, alpha=0.9, linewidth=ee_edge_width * 0.7, linestyle='-')
-                                elif src_exc_state == exc_R or dst_exc_state == exc_R:  # If either node is refractory
-                                    ax.plot(ee_x_coords, ee_y_coords, 'blue', zorder=3, alpha=0.7, linewidth=ee_edge_width * 0.6, linestyle='-')
-                                else:  # Both nodes are inactive
-                                    ax.plot(ee_x_coords, ee_y_coords, 'green', zorder=3, alpha=0.5, linewidth=ee_edge_width * 0.5, linestyle='-')
-                                plotted_ee_edges += 1
+                                ees, eet = current_edge
+                                ee_x_coords = [pos[ees][0], pos[eet][0]]
+                                ee_y_coords = [pos[ees][1], pos[eet][1]]
+                                src_e_state = curr_exc_state[ees]
+                                dst_e_state = curr_exc_state[eet]
+                                src_i_state = curr_inh_state[ees]
+                                dst_i_state = curr_inh_state[eet]
+                            if src_e_state == exc_I or dst_e_state == exc_I:  # If either node is active
+                                ax.plot(ee_x_coords, ee_y_coords, 'red',alpha=0.7, zorder=3, linewidth=ee_edge_width* 0.7, linestyle='-')
+                            elif src_e_state == exc_R or dst_e_state == exc_R:  # If either node is refractory
+                                ax.plot(ee_x_coords, ee_y_coords, 'coral',alpha=0.5, zorder=3, linewidth=ee_edge_width* 0.7, linestyle='-')
+                            elif src_e_state == exc_S or dst_e_state == exc_S:
+                                ax.plot(ee_x_coords, ee_y_coords, 'blue', alpha=0.3, zorder=3, linewidth=ee_edge_width * 0.7, linestyle='-')
+                            plotted_ee_edges += 1
                     # Plot Input_EE edges
-                    if len(input_ee_edges) > 0:
-                        subsample_rate = max(1, len(input_ee_edges) // 5000000)  # Adjust subsample rate for Input_EE edges
+                    if len(renewal_input_ee_edges) > 0:
+                        subsample_rate = max(1, len(renewal_input_ee_edges) // 5000000)  # Adjust subsample rate for Input_EE edges
                         plotted_input_ee_edges = 0
-                        for edge_idx, current_edge in enumerate(input_ee_edges):
-                            current_edge = input_ee_edges[edge_idx]
+                        for edge_idx, current_edge in enumerate(renewal_input_ee_edges):
+                            current_edge = renewal_input_ee_edges[edge_idx]
                             if edge_idx % subsample_rate == 0 and plotted_input_ee_edges < 5000000:
-                                s1, t1 = current_edge
-                                input_ee_x_coords = [pos[s1][0], pos[t1][0]]
-                                input_ee_y_coords = [pos[s1][1], pos[t1][1]]
-                                src_exc_state = curr_exc_state[s1]
-                                dst_exc_state = curr_exc_state[t1]
-                                if src_exc_state == exc_I or dst_exc_state == exc_I:  # If either node is active
-                                    ax.plot(input_ee_x_coords, input_ee_y_coords, 'magenta', zorder=3, alpha=0.9, linewidth=input_ee_edge_width * 0.7, linestyle='-')
-                                elif src_exc_state == exc_R or dst_exc_state == exc_R:  # If either node is refractory
-                                    ax.plot(input_ee_x_coords, input_ee_y_coords, 'lightgreen', zorder=3, alpha=0.7, linewidth=input_ee_edge_width * 0.6, linestyle='-')
-                                else:  # Both nodes are inactive
-                                    ax.plot(input_ee_x_coords, input_ee_y_coords, 'lightcoral', zorder=3, alpha=0.5, linewidth=input_ee_edge_width * 0.5, linestyle='-')
-                                plotted_input_ee_edges += 1            
+                                ees1, eet1 = current_edge
+                                input_ee_x_coords = [pos[ees1][0], pos[eet1][0]]
+                                input_ee_y_coords = [pos[ees1][1], pos[eet1][1]]
+                                src_e_state = curr_exc_state[ees1]
+                                dst_e_state = curr_exc_state[eet1]
+                                src_i_state = curr_inh_state[ees1]
+                                dst_i_state = curr_inh_state[eet1]
+                            if src_e_state == exc_I or dst_e_state == exc_I:
+                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'gold',  zorder=3, alpha=0.7, linewidth=input_ee_edge_width * 0.7, linestyle=(0, (5, 1)))
+                            elif src_e_state == exc_R or dst_e_state == exc_R:
+                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'cyan', zorder=3, alpha=0.5, linewidth=input_ee_edge_width* 0.5, linestyle=(0, (5, 1)))
+                            else:
+                                ax.plot(input_ee_x_coords, input_ee_y_coords, 'purple', zorder=3, alpha=0.3, linewidth=input_ee_edge_width * 0.5, linestyle=(0, (5, 1)))           
+                            plotted_input_ee_edges += 1
                     # Plot II edges (Inhibitory to Inhibitory)
-                    if len(ii_edges) > 0:
-                        subsample_rate = max(1, len(ii_edges) // 5000000)  # Adjust subsample rate for II edges
+                    if len(renewal_ii_edges) > 0:
+                        subsample_rate = max(1, len(renewal_ii_edges) // 5000000)  # Adjust subsample rate for II edges
                         plotted_ii_edges = 0
-                        for edge_idx, current_edge in enumerate(ii_edges):
-                            current_edge = ii_edges[edge_idx]
+                        for edge_idx, current_edge in enumerate(renewal_ii_edges):
+                            current_edge = renewal_ii_edges[edge_idx]
                             if edge_idx % subsample_rate == 0 and plotted_ii_edges < 5000000:
-                                s1, t1 = current_edge
-                                ii_x_coords = [pos[s1][0], pos[t1][0]]
-                                ii_y_coords = [pos[s1][1], pos[t1][1]]
-                                src_inh_state = curr_inh_state[s1]
-                                dst_inh_state = curr_inh_state[t1]
-                                if src_inh_state == inh_I or dst_inh_state == inh_I:  # If either node is active
-                                    ax.plot(ii_x_coords, ii_y_coords, 'purple', zorder=3, alpha=0.9, linewidth=ii_edge_width * 0.7, linestyle='-')
-                                elif src_inh_state == inh_R or dst_inh_state == inh_R:  # If either node is refractory
-                                    ax.plot(ii_x_coords, ii_y_coords, 'navy', zorder=3, alpha=0.7, linewidth=ii_edge_width * 0.6, linestyle='-')
-                                else:  # Both nodes are inactive
-                                    ax.plot(ii_x_coords, ii_y_coords, 'darkgreen', zorder=3, alpha=0.5, linewidth=ii_edge_width * 0.5, linestyle='-')
-                                plotted_ii_edges += 1
+                                iis, iit = current_edge
+                                ii_x_coords = [pos[iis][0], pos[iit][0]]
+                                ii_y_coords = [pos[iis][1], pos[iit][1]]
+                                src_e_state = curr_exc_state[iis]
+                                dst_e_state = curr_exc_state[iit]
+                                src_i_state = curr_inh_state[iis]
+                                dst_i_state = curr_inh_state[iit]              
+                            if src_i_state == inh_I or dst_i_state == inh_I:
+                                ax.plot(ii_x_coords, ii_y_coords, 'red', alpha=0.7, zorder=3, linewidth=ii_edge_width * 0.7, linestyle='--')
+                            elif src_i_state == inh_R or dst_i_state == inh_R:
+                                ax.plot(ii_x_coords, ii_y_coords, 'coral', alpha=0.5, zorder=3, linewidth=ii_edge_width * 0.5, linestyle='--')
+                            elif src_i_state == inh_S or dst_i_state == inh_S:
+                                ax.plot(ii_x_coords, ii_y_coords, 'blue', alpha=0.3, zorder=3, linewidth=ii_edge_width * 0.5, linestyle='--')
+                            plotted_ii_edges += 1
                     # Plot Input_II edges
-                    if len(input_ii_edges) > 0:
-                        subsample_rate = max(1, len(input_ii_edges) // 5000000)
+                    if len(renewal_input_ii_edges) > 0:
+                        subsample_rate = max(1, len(renewal_input_ii_edges) // 5000000)
                         plotted_input_ii_edges = 0
-                        for edge_idx, current_edge in enumerate(input_ii_edges):
-                            current_edge = input_ii_edges[edge_idx]
+                        for edge_idx, current_edge in enumerate(renewal_input_ii_edges):
+                            current_edge = renewal_input_ii_edges[edge_idx]
                             if edge_idx % subsample_rate == 0 and plotted_input_ii_edges < 5000000:
-                                s1, t1 = current_edge
-                                input_ii_x_coords = [pos[s1][0], pos[t1][0]]
-                                input_ii_y_coords = [pos[s1][1], pos[t1][1]]
-                                src_inh_state = curr_inh_state[s1]
-                                dst_inh_state = curr_inh_state[t1]
-                                if src_inh_state == inh_I or dst_inh_state == inh_I:  # If either node is active
-                                    ax.plot(input_ii_x_coords, input_ii_y_coords, 'cyan', zorder=3, alpha=0.9, linewidth=input_ii_edge_width * 0.7, linestyle='-')
-                                elif src_inh_state == inh_R or dst_inh_state == inh_R:  # If either node is refractory
-                                    ax.plot(input_ii_x_coords, input_ii_y_coords, 'yellowgreen', zorder=3, alpha=0.7, linewidth=input_ii_edge_width * 0.6, linestyle='-')
-                                else:  # Both nodes are inactive
-                                    ax.plot(input_ii_x_coords, input_ii_y_coords, 'violet', zorder=3, alpha=0.5, linewidth=input_ii_edge_width * 0.5, linestyle='-')
-                                plotted_input_ii_edges += 1
+                                iis1, iit1 = current_edge
+                                input_ii_x_coords = [pos[iis1][0], pos[iit1][0]]
+                                input_ii_y_coords = [pos[iis1][1], pos[iit1][1]]
+                                src_e_state = curr_exc_state[iis1]
+                                dst_e_state = curr_exc_state[iit1]
+                                src_i_state = curr_inh_state[iis1]
+                                dst_i_state = curr_inh_state[iit1]
+                            if src_i_state == inh_I or dst_i_state == inh_I:
+                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'gold',  zorder=3, alpha=0.7, linewidth=input_ii_edge_width * 0.7, linestyle=(0, (3, 1, 1, 1, 1, 1)))
+                            elif src_i_state == inh_R or dst_i_state == inh_R:
+                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'cyan', zorder=3, alpha=0.5, linewidth=input_ii_edge_width * 0.5, linestyle=(0, (3, 1, 1, 1, 1, 1)))
+                            else:
+                                ax.plot(input_ii_x_coords, input_ii_y_coords, 'purple', zorder=3, alpha=0.3, linewidth=input_ii_edge_width * 0.5, linestyle=(0, (3, 1, 1, 1, 1, 1)))
+                            plotted_input_ii_edges += 1
                     # Plot EI edges (Excitatory to Inhibitory)
-                    if len(ei_edges) > 0:
-                        subsample_rate = max(1, len(ei_edges) // 5000000)  # Adjust subsample rate for EI edges
+                    if len(renewal_ei_edges) > 0:
+                        subsample_rate = max(1, len(renewal_ei_edges) // 5000000)  # Adjust subsample rate for EI edges
                         plotted_ei_edges = 0
-                        for edge_idx, current_edge in enumerate(ei_edges):
-                            current_edge = ei_edges[edge_idx]
+                        for edge_idx, current_edge in enumerate(renewal_ei_edges):
+                            current_edge = renewal_ei_edges[edge_idx]
                             if edge_idx % subsample_rate == 0 and plotted_ei_edges < 5000000:
-                                s1, t1 = current_edge
-                                ei_x_coords = [pos[s1][0], pos[t1][0]]
-                                ei_y_coords = [pos[s1][1], pos[t1][1]]
-                                src_exc_state = curr_exc_state[s1]
-                                dst_inh_state = curr_inh_state[t1]
-                                if src_exc_state == exc_I or dst_inh_state == inh_I:  # If either node is active
-                                    ax.plot(ei_x_coords, ei_y_coords, 'darkred', zorder=3, alpha=0.9, linewidth=ei_edge_width * 0.7, linestyle=':')
-                                elif src_exc_state == exc_R or dst_inh_state == inh_R:  # If either node is refractory
-                                    ax.plot(ei_x_coords, ei_y_coords, 'lime', zorder=3, alpha=0.7, linewidth=ei_edge_width * 0.6, linestyle=':')
-                                else:  # Both nodes are inactive
-                                    ax.plot(ei_x_coords, ei_y_coords, 'grey', zorder=3, alpha=0.5, linewidth=ei_edge_width * 0.5, linestyle=':')
-                                plotted_ei_edges += 1
+                                eis, eit = current_edge
+                                ei_x_coords = [pos[eis][0], pos[eit][0]]
+                                ei_y_coords = [pos[eis][1], pos[eit][1]]
+                                src_e_state = curr_exc_state[eis]
+                                dst_e_state = curr_exc_state[eit]
+                                src_i_state = curr_inh_state[eis]
+                                dst_i_state = curr_inh_state[eit]                                
+                            if src_e_state == exc_I or dst_i_state == inh_I:
+                                ax.plot(ei_x_coords, ei_y_coords, 'red', alpha=0.7, zorder=3, linewidth=ei_edge_width* 0.7, linestyle=(0, (1, 1)))
+                            elif src_e_state == exc_R or dst_i_state == inh_R:
+                                ax.plot(ei_x_coords, ei_y_coords, 'coral',  alpha=0.5, zorder=3, linewidth=ei_edge_width* 0.5, linestyle=(0, (1, 1)))
+                            elif src_e_state == exc_S or dst_i_state == inh_S:
+                                ax.plot(ei_x_coords, ei_y_coords, 'blue',  alpha=0.3, zorder=3, linewidth=ei_edge_width * 0.5, linestyle=(0, (1, 1)))
+                            plotted_ei_edges += 1
                     # Plot IE edges (Inhibitory to Excitatory)
-                    if len(ie_edges) > 0:
-                        subsample_rate = max(1, len(ie_edges) // 5000000)  # Adjust subsample rate for IE edges
+                    if len(renewal_ie_edges) > 0:
+                        subsample_rate = max(1, len(renewal_ie_edges) // 5000000)  # Adjust subsample rate for IE edges
                         plotted_ie_edges = 0
-                        for edge_idx, current_edge in enumerate(ie_edges):
-                            current_edge = ie_edges[edge_idx]
+                        for edge_idx, current_edge in enumerate(renewal_ie_edges):
+                            current_edge = renewal_ie_edges[edge_idx]
                             if edge_idx % subsample_rate == 0 and plotted_ie_edges < 5000000:
-                                s1, t1 = current_edge
-                                ie_x_coords = [pos[s1][0], pos[t1][0]]
-                                ie_y_coords = [pos[s1][1], pos[t1][1]]
-                                src_inh_state = curr_inh_state[s1]
-                                dst_exc_state = curr_exc_state[t1]
-                                if src_inh_state == inh_I or dst_exc_state == exc_I:  # If either node is active
-                                    ax.plot(ie_x_coords, ie_y_coords, 'pink', zorder=3, alpha=0.9, linewidth=ie_edge_width * 0.7, linestyle=':')
-                                elif src_inh_state == inh_R or dst_exc_state == exc_R:  # If either node is refractory
-                                    ax.plot(ie_x_coords, ie_y_coords, 'yellow', zorder=3, alpha=0.7, linewidth=ie_edge_width * 0.6, linestyle=':')
-                                else:  # Both nodes are inactive
-                                    ax.plot(ie_x_coords, ie_y_coords, 'black', zorder=3, alpha=0.5, linewidth=ie_edge_width * 0.5, linestyle=':')
-                                plotted_ie_edges += 1
+                                ies, iet = current_edge
+                                ie_x_coords = [pos[ies][0], pos[iet][0]]
+                                ie_y_coords = [pos[ies][1], pos[iet][1]]
+                                src_e_state = curr_exc_state[ies]
+                                dst_e_state = curr_exc_state[iet]
+                                src_i_state = curr_inh_state[ies]
+                                dst_i_state = curr_inh_state[iet]
+                            if src_i_state == inh_I or dst_e_state == exc_I:
+                                ax.plot(ie_x_coords, ie_y_coords, 'red',  alpha=0.7, zorder=3, linewidth=ie_edge_width* 0.7, linestyle=':')
+                            elif src_i_state == inh_R or dst_e_state == exc_R:
+                                ax.plot(ie_x_coords, ie_y_coords, 'coral', alpha=0.5, zorder=3, linewidth=ie_edge_width* 0.7, linestyle=':')
+                            elif src_i_state == inh_S or dst_e_state == exc_S:
+                                ax.plot(ie_x_coords, ie_y_coords, 'blue', alpha=0.3, zorder=3, linewidth=ie_edge_width * 0.7, linestyle=':')
+                            plotted_ie_edges += 1
                     from matplotlib.lines import Line2D
                     legend_elements = [
-                        Line2D([0], [0], color='red', lw=2, label='exc_I (EE)', linestyle='-', alpha=0.9),
-                        Line2D([0], [0], color='purple', lw=2, label='inh_I (II)', linestyle='-', alpha=0.9),
-                        Line2D([0], [0], color='darkred', lw=2, label='exc_I -> inh_I (EI)', linestyle=':', alpha=0.9),
-                        Line2D([0], [0], color='pink', lw=2, label='inh_I -> exc_I (IE)', linestyle=':', alpha=0.9),
+                        Line2D([0], [0], color='red', lw=2, label='I (EE)', linestyle='-', alpha=0.7),
+                        Line2D([0], [0], color='red', lw=2, label='I (II)', linestyle='--', alpha=0.7),
+                        Line2D([0], [0], color='red', lw=2, label='I (EI)', linestyle=(0, (1, 1)), alpha=0.7),
+                        Line2D([0], [0], color='red', lw=2, label='I (IE)', linestyle=':', alpha=0.7),
                         
-                        Line2D([0], [0], color='blue', lw=2, label='exc_R (EE)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='navy', lw=2, label='inh_R (II)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='lime', lw=2, label='exc_R -> inh_R (EI)', linestyle=':', alpha=0.7),
-                        Line2D([0], [0], color='yellow', lw=2, label='inh_R -> exc_R (IE)', linestyle=':', alpha=0.7),
+                        Line2D([0], [0], color='coral', lw=2, label='R (EE)', linestyle='-', alpha=0.5),
+                        Line2D([0], [0], color='coral', lw=2, label='R (II)', linestyle='--', alpha=0.5),
+                        Line2D([0], [0], color='coral', lw=2, label='R (EI)', linestyle=(0, (1, 1)), alpha=0.5),
+                        Line2D([0], [0], color='coral', lw=2, label='R (IE)', linestyle=':', alpha=0.5),
                         
-                        Line2D([0], [0], color='green', lw=2, label='exc_S (EE)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='darkgreen', lw=2, label='inh_S (II)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='grey', lw=2, label='exc_S -> inh_S (EI)', linestyle=':', alpha=0.5),
-                        Line2D([0], [0], color='black', lw=2, label='inh_S -> exc_S (IE)', linestyle=':', alpha=0.5),
-                       
-                        Line2D([0], [0], color='magenta', lw=2, label='exc_I (Input_EE)', linestyle='-', alpha=0.9),
-                        Line2D([0], [0], color='cyan', lw=2, label='inh_I (Input_II)', linestyle='-', alpha=0.9),
-                        Line2D([0], [0], color='lightgreen', lw=2, label='exc_R (Input_EE)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='yellowgreen', lw=2, label='inh_R (Input_II)', linestyle='-', alpha=0.7),
-                        Line2D([0], [0], color='lightcoral', lw=2, label='exc_S (Input_EE)', linestyle='-', alpha=0.5),
-                        Line2D([0], [0], color='violet', lw=2, label='inh_S (Input_II)', linestyle='-', alpha=0.5),
+                        Line2D([0], [0], color='blue', lw=2, label='S (EE)', linestyle='-', alpha=0.3),
+                        Line2D([0], [0], color='blue', lw=2, label='S (II)', linestyle='--', alpha=0.3),
+                        Line2D([0], [0], color='blue', lw=2, label='S (EI)', linestyle=(0, (1, 1)), alpha=0.3),
+                        Line2D([0], [0], color='blue', lw=2, label='S (IE)', linestyle=':', alpha=0.3),
+
+                        Line2D([0], [0], color='gold', lw=2, label='I (Input_EE)', linestyle=(0, (5, 1)), alpha=0.7),
+                        Line2D([0], [0], color='gold', lw=2, label='I (Input_II)', linestyle=(0, (3, 1, 1, 1, 1, 1)), alpha=0.7),
+                        Line2D([0], [0], color='cyan', lw=2, label='R (Input_EE)', linestyle=(0, (5, 1)), alpha=0.5),
+                        Line2D([0], [0], color='cyan', lw=2, label='R (Input_II)', linestyle=(0, (3, 1, 1, 1, 1, 1)), alpha=0.5),
+                        Line2D([0], [0], color='purple', lw=2, label='S (Input_EE)', linestyle=(0, (5, 1)), alpha=0.3),
+                        Line2D([0], [0], color='purple', lw=2, label='S (Input_II)', linestyle=(0, (3, 1, 1, 1, 1, 1)), alpha=0.3),
                     ]
                     
-                    ax.legend(handles=legend_elements, loc='upper right', frameon=True, fontsize=8)
+                    ax.legend(handles=legend_elements, loc='upper left', frameon=True, fontsize=8)
                     
-                    ax.set_title(f'{network_name} Dynamic S->I->R->S epidemic model Frame {count}\n exc_S={exc_inactive_count} | exc_I={exc_active_count} | exc_R={exc_refractory_count} | inh_S={inh_inactive_count} | inh_I={inh_active_count} | inh_R={inh_refractory_count}\n EE={plotted_ee_edges} | EI={plotted_ei_edges} | IE={plotted_ie_edges} | II={plotted_ii_edges} | Input_EE={plotted_input_ee_edges} | Input_II={plotted_input_ii_edges}', fontsize=10)
+                    ax.set_title(f'{network_name} Dynamic S->I->R->S epidemic model Frame {count}\n Excitatory: Inactive(S)={exc_inactive_count} | Active(I)={exc_active_count} | Refractory(R)={exc_refractory_count} | Inhibitory: Inactive(S)={inh_inactive_count} | Active(I)={inh_active_count} | Refractory(R)={inh_refractory_count}\n Edge_count: EE={plotted_ee_edges} | EI={plotted_ei_edges} | IE={plotted_ie_edges} | II={plotted_ii_edges} | Input_EE={plotted_input_ee_edges} | Input_II={plotted_input_ii_edges}', fontsize=10)
                     ax.set_aspect('equal')
                     
                     # Set fixed axis limits to show gradual spreading effect
