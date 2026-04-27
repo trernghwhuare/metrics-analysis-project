@@ -19,6 +19,9 @@ networkx = ">=2.6.0"
 tqdm = ">=4.62.0"
 mystmd = ">=1.8.2,<2"
 pycairo = ">=1.29.0,<2"
+jupyter-book = ">=2.1.4,<3"
+myst-parser = ">=5.0.0,<6"
+sphinx = ">=9.0.4,<10"
 
 [feature.test]
 dependencies = { pytest = ">=6.2.0", pytest-cov = ">=2.12.0" }
