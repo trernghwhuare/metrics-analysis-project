@@ -9,7 +9,8 @@ build:
     python: "3.11"
     nodejs: "20"
   commands:
-    - myst build
+    - npm ci
+    - npx myst build
 
 python:
   install:
