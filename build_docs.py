@@ -1,32 +1,30 @@
 #!/usr/bin/env python3
 """
 Wrapper script to build MyST documentation.
-This ensures the myst command is available in the correct Python environment.
+This directly calls the mystmd_py.main module to avoid PATH issues.
 """
-import subprocess
 import sys
 import os
 
 def main():
-    # Get the directory where Python scripts are installed
-    python_scripts_dir = os.path.join(os.path.dirname(sys.executable), 'bin')
-    myst_path = os.path.join(python_scripts_dir, 'myst')
-    
-    if os.path.exists(myst_path):
-        # Use the full path to myst
-        cmd = [myst_path, 'build']
-    else:
-        # Fall back to just 'myst'
-        cmd = ['myst', 'build']
+    # Add current directory to Python path to ensure local modules are found
+    sys.path.insert(0, os.getcwd())
     
     try:
-        result = subprocess.run(cmd, check=True)
-        sys.exit(result.returncode)
-    except subprocess.CalledProcessError as e:
-        print(f"Error running myst build: {e}", file=sys.stderr)
-        sys.exit(e.returncode)
-    except FileNotFoundError:
-        print("myst command not found. Please ensure mystmd is installed.", file=sys.stderr)
+        # Import and run the MyST CLI main function directly
+        from mystmd_py.main import main as myst_main
+        # Set argv to mimic 'myst build' command
+        sys.argv = ['myst', 'build']
+        myst_main()
+    except ImportError as e:
+        print(f"MyST CLI module not found: {e}", file=sys.stderr)
+        print("Please ensure mystmd is installed correctly.", file=sys.stderr)
+        sys.exit(1)
+    except SystemExit as e:
+        # myst_main calls sys.exit(), so we need to handle it properly
+        sys.exit(e.code)
+    except Exception as e:
+        print(f"Error running MyST CLI: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":
