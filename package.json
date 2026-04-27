@@ -1,0 +1,14 @@
+{
+  "name": "metrics-analysis-project",
+  "version": "0.1.0",
+  "description": "A comprehensive Python framework for analyzing complex networks using graph theory metrics",
+  "main": "index.js",
+  "scripts": {
+    "build": "myst build"
+  },
+  "dependencies": {
+    "mystmd": "^1.8.2"
+  },
+  "author": "Hua Cheng <trernghwhuare@aliyun.com>",
+  "license": "MIT"
+}
