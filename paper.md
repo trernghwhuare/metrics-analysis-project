@@ -453,21 +453,21 @@ Our approach offers several significant advantages over traditional neuronal cir
 
 Our framework implements eight fundamental network centrality measures to characterize neuronal circuit organization:
 
-**PageRank Centrality** [@lawrence-pagerank-1998] quantifies the importance of nodes based on the structure of incoming links, using a damping factor to model random navigation behavior.
+**PageRank Centrality** [13] quantifies the importance of nodes based on the structure formulate incoming links, using a damping factor to model random navigation behavior.
 
-**Betweenness Centrality** [@adamic-polblogs] measures the extent to which a node lies on shortest paths between other nodes, identifying critical bridges in information flow.
+**Betweenness Centrality** [15] measures the extent to which a node lies on shortest paths between other nodes, identifying critical bridges in information flow.
 
-**Closeness Centrality** [@closeness-wikipedia] captures how close a node is to all other nodes in the network, reflecting efficiency of information propagation.
+**Closeness Centrality** [16] captures how close a node is to all other nodes in the network, reflecting efficiency of information propagation.
 
-**Eigenvector Centrality** [@eigenvector-centrality; @langville-survey-2005] assigns relative scores to nodes based on the principle that connections to high-scoring nodes contribute more than connections to low-scoring nodes.
+**Eigenvector Centrality** [18, 14] assigns relative scores to nodes based on the principle that connections to high-scoring nodes contribute more than connections to low-scoring nodes.
 
-**Katz Centrality** [@langville-survey-2005] extends eigenvector centrality by incorporating both direct and indirect connections with exponential decay based on path length.
+**Katz Centrality** [14] extends eigenvector centrality by incorporating both direct and indirect connections with exponential decay based on path length.
 
-**HITS (Hyperlink-Induced Topic Search) Centrality** [@langville-survey-2005] computes separate hub and authority scores, where good hubs point to many good authorities and good authorities are pointed to by many good hubs.
+**HITS (Hyperlink-Induced Topic Search) Centrality** [14] computes separate hub and authority scores, where good hubs point to many good authorities and good authorities are pointed to by many good hubs.
 
-**EigenTrust Centrality** [@kamvar-eigentrust-2003] models trust transitivity in networks, where trust in a node is determined by the trustworthiness of nodes that trust it.
+**EigenTrust Centrality** [20] models trust transitivity in networks, where trust in a node is determined by the trustworthiness of nodes that trust it.
 
-**Trust Transitivity Centrality** [@richters-trust-2010] extends trust modeling by considering weighted paths and structural constraints in trust propagation.
+**Trust Transitivity Centrality** [21] extends trust modeling by considering weighted paths and structural constraints in trust propagation.
 
 These measures provide complementary perspectives on network structure, enabling comprehensive analysis of neuronal circuit organization and function.
 
