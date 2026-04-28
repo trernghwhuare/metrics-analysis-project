@@ -2,7 +2,7 @@
 
 A comprehensive Python framework for analyzing complex networks using graph theory metrics with built-in visualization and reproducible research capabilities.
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/trernghwhuare/metrics-analysis-project/main?urlpath=lab)
+> **Note**: This project uses graph-tool which has complex C++ dependencies. While MyBinder configuration files are included, full functionality may be limited in standard binder environments due to compilation requirements. Local execution using pixi is recommended for complete functionality.
 
 ---
 
@@ -27,7 +27,7 @@ A comprehensive Python framework for analyzing complex networks using graph theo
 - **Modular Network Visualization**: Static graph drawing with anatomical organization based on cortical layers, regions, and cell types
 - **Hierarchical Community Detection**: Multi-level community structure visualization with nested blockmodel analysis
 - **Neuronal Dynamics Modeling**: Compare node state models (SIRS epidemic) and edge rewiring patterns to simulate complex neuronal network activities
-- **Reproducible Research**: Complete computational environment with MyBinder compatibility
+- **Reproducible Research**: Complete computational environment managed by pixi with cross-platform compatibility (Linux/macOS)
 - **Interactive Analysis**: Jupyter Notebook interface for exploratory data analysis
 - **Professional Documentation**: MyST-powered documentation with Jupyter Book integration
 
@@ -212,7 +212,7 @@ Contributions are welcome! Please follow these guidelines:
 
 This project is licensed under the MIT License - see the [LICENSE](#license) file for details.
 
-## 🏷️ Keywords {#keywords}
+## 🏷️ Keywords
 
 network analysis, graph theory, complex networks, computational neuroscience, graph-tool, reproducible research, Jupyter, MyST, Jupyter Book, neuronal dynamics, SIRS model, edge rewiring, synaptic plasticity, hierarchical visualization, modular networks
 

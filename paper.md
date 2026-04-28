@@ -2,83 +2,26 @@
 
 ## Abstract
 
-**Background**: Visualization of neuronal circuit models remains a critical challenge in computational neuroscience, requiring specialized tools for representing complex network structures and dynamic properties.
-**Objective**: We present a comprehensive, reproducible workflow integrating modern dependency management (pixi), interactive documentation (MyST/Jupyter Book), and advanced visualization capabilities for neuronal circuit models using graph-tool and Python scientific stack.
-**Methods**: The workflow combines graph-theoretical analysis with publication-quality visualization tools (matplotlib, seaborn, graph-tool.draw) to create static images and animated GIFs of neuronal connectivity patterns, community structure, and network metrics.
-**Results**: Successful implementation demonstrates complete reproducibility across platforms (Linux, macOS) with zero-installation access via MyBinder, validated with graph-tool version 2.98. The framework generates strip plots, box plots, correlation heatmaps, and clustermaps for comparative network analysis, with capability to produce animated visualizations of dynamic circuit properties.
-**Significance**: This protocol provides a template for reproducible visualization of neuronal circuit models meeting open science standards and Neurolibre publication requirements.
+**Background**: Visualization of neuronal circuit models remains a critical challenge in computational neuroscience, requiring specialized tools for representing complex network structures, dynamic properties, and multi-model comparative analysis.
+**Objective**: We present a reproducible workflow for visualizing large-scale neuronal circuit models from multiple structural and functional perspectives, enabling comprehensive exploration of network organization across different analytical dimensions.
+**Methods**: The workflow combines graph-theoretical centrality analysis across five distinct circuit architectures with publication-quality visualization tools (matplotlib, seaborn, graph-tool.draw) to create static images of individual centrality measures, kernel density estimation plots of centrality distributions, and animated GIFs demonstrating community structure evolution via stochastic block model inference.
+**Results**: Successful implementation demonstrates complete reproducibility across platforms (Linux, macOS) with validated graph-tool version 2.98. The framework generates comprehensive univariate centrality distribution analyses across multiple weighted models (TC2PT, max_CTC_plus, M1_max_plus, M2aM1aS1a_max_plus, M2M1S1_max_plus), producing individual centrality visualizations and kernel density estimation plots for each centrality metric, along with animated visualizations of dynamic community detection processes.
+**Significance**: This protocol provides a template for reproducible multi-model comparison of neuronal circuit architectures meeting open science standards and Neurolibre publication requirements, enabling detailed discrimination of network roles through structural weighting and continuous variation patterns across centrality metrics.
+
+## Keywords
+neuronal circuits, computational neuroscience, graph theory, SFDP, price_network, stochastic block model (SBM)
 
 ## Introduction
 
-Computational neuroscience increasingly relies on complex network analysis to understand brain connectivity and neural circuit organization [1]. The ability to visualize neuronal circuit models is essential for interpreting network properties such as centrality, clustering, and community structure in neural systems [2]. However, effective visualization of neuronal circuits presents unique challenges:
+Computational neuroscience increasingly relies on complex network analysis to understand brain connectivity and neural circuit organization. The ability to visualize neuronal circuit models from multiple analytical perspectives is essential for interpreting network properties such as centrality, clustering, and community structure in neural systems. However, effective visualization of neuronal circuits presents unique challenges including high-dimensional connectivity, multi-scale organization, and the need for specialized computational tools.
 
-- **High-dimensional connectivity**: Neuronal networks often contain thousands to millions of nodes with complex connection patterns
-- **Multi-scale organization**: Circuits exhibit hierarchical structure from microcircuits to whole-brain networks
-- **Dynamic properties**: Functional connectivity changes over time and across behavioral states
-- **Specialized dependencies**: Tools like graph-tool require complex C++ compilation and exhibit platform-specific limitations [3]
+Traditional approaches often fail to capture the comprehensive nature of neuronal circuit analysis, providing limited views that cannot reveal the full spectrum of network organization. Here we present a systematic framework that enables researchers to view large-scale neuronal networks from different structural and functional angles, providing complementary insights into network architecture and functional roles.
 
-Traditional visualization approaches often fail to capture the interactive and dynamic nature of neuronal circuit analysis [4]. Static images cannot convey the exploratory process of network investigation, while complex installation procedures create barriers for peer reviewers and collaborators [5].
-
-Here we present a standardized protocol that addresses these visualization challenges through integrated modern tooling. Our approach builds upon recent advances in reproducible research infrastructure [6,7] and implements the FAIR (Findable, Accessible, Interoperable, Reusable) principles for scientific software [8].
-
-### Key Innovations for Neuronal Circuit Visualization
-
-1. **Integrated visualization pipeline**: Combines graph-tool's native drawing capabilities with matplotlib/seaborn for publication-quality static visualizations
-2. **Animated GIF generation**: Capability to create dynamic visualizations showing network evolution, community detection processes, or parameter sweeps
-3. **pixi-based dependency management** replacing traditional conda environments with improved cross-platform consistency [9]
-4. **MyST-powered documentation** with Jupyter Book integration enabling executable visualization protocols [10]
-5. **Neurolibre/MyBinder compatibility** enabling zero-installation peer review and interactive exploration [11]
-
-This protocol enables researchers to implement reproducible neuronal circuit visualization workflows that meet contemporary open science standards while maintaining computational rigor essential for neuroscience applications.
+Our approach integrates graph-theoretical analysis with advanced visualization techniques to create a multi-dimensional perspective on neuronal circuit construction. By applying diverse centrality measures, hierarchical community detection, and dynamic modeling across multiple circuit architectures, we demonstrate how different analytical lenses reveal distinct aspects of the same underlying network structure.
 
 ## Results
 
-### Technical Validation
-
-Our implementation successfully integrates the following visualization components:
-
-- **Core Dependencies**: graph-tool 2.98 (with native drawing capabilities), Python 3.11, numpy 1.26, scipy 1.11, pandas 2.1, networkx 3.2
-- **Visualization Libraries**: matplotlib 3.8, seaborn 0.12, graph-tool.draw module
-- **Environment Management**: pixi workspace configuration with explicit platform constraints (linux-64, osx-64)
-- **Documentation System**: MyST v1.8.2 with Node.js v20.20.1 requirement
-- **Cloud Compatibility**: Complete MyBinder configuration with postBuild automation
-
-The workflow has been validated on Ubuntu 24.04 (linux-64) with successful execution of all computational tasks including:
-- Graph-tool import and version verification (v2.98)
-- Jupyter Notebook launch with interactive analysis capabilities  
-- Generation of comparative visualizations (strip plots, box plots, heatmaps, clustermaps)
-- MyST documentation build processing 3 source files
-- Unit test execution with pytest framework
-
-### Visualization Capabilities
-
-The framework provides comprehensive visualization capabilities for neuronal circuit models:
-
-#### Static Visualizations
-- **Network topology plots**: Using graph-tool.draw for direct network visualization with customizable node/edge properties
-- **Statistical summaries**: strip plots and box plots showing distributions of network metrics across different circuit models
-- **Correlation analysis**: Heatmaps and clustermaps revealing relationships between different graph-theoretical measures
-- **Comparative analysis**: Side-by-side visualizations enabling direct comparison of multiple neuronal circuit configurations
-
-#### Dynamic Visualizations
-- **Animated GIFs**: Time-series visualizations showing network evolution, community detection processes, or parameter optimization
-- **Interactive exploration**: Jupyter widgets enabling real-time parameter adjustment and visualization updates
-- **Multi-panel layouts**: Combined visualizations showing complementary aspects of neuronal circuit organization
-
-### Representative Results
-
-To address limitations in centrality measure variation observed in unweighted neuronal circuit models, we implemented a structural weighting approach that preserves network topology while introducing meaningful edge weights. This methodology enhances the discriminative power of graph-theoretical algorithms and enables comprehensive multi-metric analysis suitable for publication-quality visualization.
-
-**Weighting Methodology**: We applied uniform random edge weights (range: 0.1-1.0) to break structural symmetries inherent in unweighted neuronal networks while maintaining their fundamental connectivity patterns. This approach ensures reproducible results (using fixed random seed) and generates continuous centrality distributions without altering the underlying network architecture.
-
-**Enhanced Centrality Coverage**: The weighted networks demonstrate significantly improved variation across centrality measures:
-- **TC2CT model**: 8/9 metrics with meaningful variation (60-600 unique values per metric)
-- **TC2PT model**: 7/9 metrics with meaningful variation (17-420 unique values per metric)  
-- **Larger models (TC2IT2PTCT, TC2IT4_IT2CT)**: 7/9 metrics with excellent variation (30-4086 unique values per metric)
-
-This represents a substantial improvement over unweighted networks, which exhibited binary or constant outputs for 6/9 centrality algorithms, severely limiting analytical utility.
-
-Visualize distinct connectivity patterns and hierarchical organization across different circuit configurations with cairo plots, as Figure 1, which provide much insightful views into neuronal networks' functional roles.
+### Network Topology and Community Structure Visualization
 
 **Figure 1**: Cairo plots, nested stochastic block models, and condensation graphs for four representative neuronal circuit models (*i.e.*, TC2CT, TC2IT2PTCT, TC2IT4_IT2CT, TC2PT) demonstrating the structural organization and community structure of each network. 
 
@@ -92,6 +35,7 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <img src="graph_draw/TC2CT/TC2CT_main.png" alt="TC2CT Main Layout" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(A-2) TC2CT Main Layout</strong> - population nodes layout from Direct thalamocortical to corticothalamic connectivity</p>
 </div>
+</div>
 
 <div style="flex: 0 0 48%; text-align: center;">
 <img src="graph_draw/TC2CT/TC2CT_ilist.png" alt="TC2CT input nodes Layout" style="width: 100%; height: auto;"/>
@@ -103,7 +47,7 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(A-4) TC2CT Nested Stochastic Block Model</strong> - Layered connectivity structure</p>
 </div>
 
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
 <img src="graph_draw/TC2CT/TC2CT_block_condesne.png" alt="TC2CT condensation graph" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(A-5) TC2CT Condensation Graph</strong> - Simplified representation of the network structure</p>
 </div>
@@ -118,7 +62,7 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(B-2) TC2IT2PTCT Nested Stochastic Block Model</strong> - Layered connectivity structure</p>
 </div>
 
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
 <img src="graph_draw/TC2IT2PTCT/TC2IT2PTCT_block_condesne.png" alt="TC2IT2PTCT condensation graph" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(B-3) TC2IT2PTCT Condensation Graph</strong> - Simplified representation of the network structure</p>
 </div>
@@ -133,7 +77,7 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(C-2) TC2IT4_IT2CT Nested Stochastic Block Model</strong> - Layered connectivity structure</p>
 </div>
 
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
 <img src="graph_draw/TC2IT4_IT2CT/TC2IT4_IT2CT_block_condesne.png" alt="TC2IT4_IT2CT condensation graph" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(C-3) TC2IT4_IT2CT Condensation Graph</strong> - Simplified representation of the network structure</p>
 </div>
@@ -148,11 +92,13 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(D-2) TC2PT Nested Stochastic Block Model</strong> - Layered connectivity structure</p>
 </div>
 
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
 <img src="graph_draw/TC2PT/TC2PT_block_condesne.png" alt="TC2PT condensation graph" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(D-3) TC2PT Condensation Graph</strong> - Simplified representation of the network structure</p>
 </div>
 </div>
+
+### Centrality Distribution Analysis
 
 **Figure 2**: Individual centrality measure visualizations for the TC2PT neuronal circuit model. This figure displays nine different graph-theoretical centrality algorithms applied to the same network, revealing complementary perspectives on neuronal importance and functional roles: (A)  **Betweenness centrality** Calculate the average number of shortest paths from one vertex to another for each vertex and edge; (B) **Closeness centrality** Calculate the possibly or weighted distance from one vertex to another; (C) **Eigenvector centrality** Calculate the eigenvector of the (weighted) adjacency matrix with the largest eigenvalue of each vertex; (D) **PageRank centrality** Calculate the in-neighbors vertex of sum weight of out-degree edges for each vertex; (E) **Katz centrality** Calculate the the (weighted) adjacency matrix in the nonhomogeneous linear system for each vertex; (F) **HITS Authority** Calculate the authority centralities of each vertex; (G) **HITS Hub** Calculate the (weighted) adjacency matrix with the largest eigenvalue of the cocitation matrix of each vertex; (H) **EigenTrust centrality** Calculate the limite with the normalized trust values in matrix for each vertex ; (I) **Trust_transitivity centrality** Calculate paths with maximum weight, using Dijkstra’s algorithm, to all in-neighbors of a given target between chosen (or all) vertices in the graph;(J)**Centrality Distribution** - Spread of centrality values across the network. 
 
@@ -188,42 +134,43 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <div style="flex: 0 0 30%; text-align: center;">
 <img src="metrics/TC2PT/TC2PT_eigentrust.png" alt="TC2PT EigenTrust Centrality" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.85em; margin-top: 5px;"><strong>(H) EigenTrust</strong> - Trusted influence</p>
+</div>
 <div style="flex: 0 0 30%; text-align: center;">
 <img src="metrics/TC2PT/TC2PT_trust_transitivity.png" alt="TC2PT Trust_transitivity Centrality" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.85em; margin-top: 5px;"><strong>(I) trust_transitivity</strong> - Global trust computation</p>
 </div>
-<div style="flex: 0 0 30%; text-align: center;">
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
 <img src="metrics/TC2PT/TC2PT_facetgrid.png" alt="TC2PT Centrality distributions" style="width: 100%; height: auto;"/>
-<p style="font-size: 0.85em; margin-top: 5px;"><strong>(J) Facet Grid</strong> - Distribution of centrality measures</p>
+<p style="font-size: 0.9em; text-align: center;"><strong>(J) Facet Grid</strong> - Distribution of centrality measures</p>
+</div>
 </div>
 
-The animation shows how the algorithm progressively refines community assignments to optimize the likelihood of the observed connectivity pattern.
+### Dynamic Community Structure Analysis
 
 **Figure 3**: Animated GIF demonstrating the identification of community structure via stochastic block model (SBM) inference. 
 
-<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;">
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
+<div style="text-align: center;">
 <img src="graph_draw/TC2CT/TC2CT_graph.gif" alt="TC2CT Community Evolution" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(A) TC2CT</strong> - Direct thalamocortical connectivity</p>
 </div>
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="text-align: center;">
 <img src="graph_draw/TC2IT2PTCT/TC2IT2PTCT_graph.gif" alt="TC2IT2PTCT Community Evolution" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(B) TC2IT2PTCT</strong> - Multi-layer interactions</p>
 </div>
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="text-align: center;">
 <img src="graph_draw/TC2IT4_IT2CT/TC2IT4_IT2CT_graph.gif" alt="TC2IT4_IT2CT Community Evolution" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(C) TC2IT4_IT2CT</strong> - Layer 4 intratelencephalic pathways</p>
 </div>
-<div style="flex: 0 0 48%; text-align: center;">
+<div style="text-align: center;">
 <img src="graph_draw/TC2PT/TC2PT_graph.gif" alt="TC2PT Community Evolution" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(D) TC2PT</strong> - Thalamocortical to pyramidal tract</p>
 </div>
 </div>
 
+### Hierarchical Community Structure Analysis
 
-**Figure 4**:
-
-Hierarchical Community Structure Analysis Across Neuronal Circuit Models
+**Figure 4**:Hierarchical Community Structure Analysis Across Neuronal Circuit Models
 
 The nested stochastic block model (SBM) reveals multi-scale community organization in neuronal circuits, showing how neurons cluster into functional modules at different hierarchical levels. Each panel displays the hierarchical clustering structure for a different circuit model, highlighting the complex modular architecture that underlies neural information processing.
 
@@ -250,20 +197,49 @@ The nested stochastic block model (SBM) reveals multi-scale community organizati
 </div>
 </div>
 
+### Univariate Centrality Distribution Analysis
+
 **Figure 5**: Univariate Centrality Distribution Analysis Across Weighted Neuronal Circuit Models
 
 Each subplot presents kernel density estimation (KDE) plots showing the distribution of individual centrality measures for each weighted neuronal circuit model. The enhanced structural weighting reveals continuous variation patterns across multiple centrality metrics, demonstrating improved discriminative power compared to unweighted analyses. These distributions highlight the rich heterogeneity in network roles across different neuronal populations.
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
-<img src="centrality/TC2PT/TC2PT_bt.png" alt="TC2PT Betweenness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_c.png" alt="TC2PT Closeness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_hitsX.png" alt="TC2PT Hits_x Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_hitsY.png" alt="TC2PT Hits_y Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_katz.png" alt="TC2PT Katz Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_pr.png" alt="TC2PT PageRank Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_t.png" alt="TC2PT Eigentrust Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_tt.png" alt="TC2PT Trust_transitivity Centrality" style="width: 32%; height: auto;">
-<img src="centrality/TC2PT/TC2PT_V.png" alt="TC2PT Eigenvector Centrality" style="width: 32%; height: auto;">
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_pr.png" alt="TC2PT PageRank Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT PageRank</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_bt.png" alt="TC2PT Betweenness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT Betweenness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;"> 
+<img src="centrality/TC2PT/TC2PT_c.png" alt="TC2PT Closeness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT Closeness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_V.png" alt="TC2PT Eigenvector Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT Eigenvector</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_katz.png" alt="TC2PT katz Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT Katz</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_hitsX.png" alt="TC2PT Hits_x Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT HITS Authority</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_hitsY.png" alt="TC2PT Hits_y Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT HITS Hub</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_t.png" alt="TC2PT Eigentrust Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT Eigentrust</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/TC2PT/TC2PT_tt.png" alt="TC2PT Trust_transitivity Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">TC2PT Trust Transitivity</p>
+</div>
 </div>
 
 <div style="display: flex; flex-direction: column; gap: 20px; margin: 20px 0;">
@@ -271,65 +247,176 @@ Each subplot presents kernel density estimation (KDE) plots showing the distribu
 <p style="font-size: 0.9em; text-align: center;"><strong>(A) TC2PT:</strong> Structural weighting reveals continuous variation patterns across multiple centrality metrics, enabling meaningful differentiation of neuronal roles.</p>
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_bt.png" alt="max_CTC_plus Betweenness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_c.png" alt="max_CTC_plus Closeness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_hitsX.png" alt="max_CTC_plus Hits_x Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_hitsY.png" alt="max_CTC_plus Hits_y Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_katz.png" alt="max_CTC_plus Katz Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_pr.png" alt="max_CTC_plus PageRank Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_t.png" alt="max_CTC_plus Eigentrust Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_tt.png" alt="max_CTC_plus Trust_transitivity Centrality" style="width: 32%; height: auto;">
-<img src="centrality/max_CTC_plus/max_CTC_plus_V.png" alt="max_CTC_plus Eigenvector Centrality" style="width: 32%; height: auto;">
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_pr.png" alt="max_CTC_plus PageRank Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus PageRank</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_bt.png" alt="max_CTC_plus Betweenness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus Betweenness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_c.png" alt="max_CTC_plus Closeness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus Closeness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_V.png" alt="max_CTC_plus Eigenvector Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus Eigenvector</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_katz.png" alt="max_CTC_plus Katz Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus Katz</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_hitsX.png" alt="max_CTC_plus Hits_x Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus HITS Authority</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_hitsY.png" alt="max_CTC_plus Hits_y Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus HITS Hub</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_t.png" alt="max_CTC_plus Eigentrust Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus EigenTrust</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/max_CTC_plus/max_CTC_plus_tt.png" alt="max_CTC_plus Trust_transitivity Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">max_CTC_plus Trust Transitivity</p>
+</div>
 </div>
 
 <img src="robust_calibrated/plots_kde/max_CTC_plus_centrality_kde.png" alt="max_CTC_plus Centrality Distributions" style="width: 100%; height: auto;">
 <p style="font-size: 0.9em; text-align: center;"><strong>(B) max_CTC_plus:</strong> Direct connectivity model demonstrates substantial variation across centrality measures, supporting detailed network role analysis.</p>
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
-<img src="centrality/M1_max_plus/M1_max_plus_bt.png" alt="M1_max_plus Betweenness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_c.png" alt="M1_max_plus Closeness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_hitsX.png" alt="M1_max_plus Hits_x Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_hitsY.png" alt="M1_max_plus Hits_y Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_katz.png" alt="M1_max_plus Katz Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_pr.png" alt="M1_max_plus PageRank Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_t.png" alt="M1_max_plus Eigentrust Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_tt.png" alt="M1_max_plus Trust_transitivity Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M1_max_plus/M1_max_plus_V.png" alt="M1_max_plus Eigenvector Centrality" style="width: 32%; height: auto;">
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_pr.png" alt="M1_max_plus PageRank Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus PageRank</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_bt.png" alt="M1_max_plus Betweenness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus Betweenness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_c.png" alt="M1_max_plus Closeness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus Closeness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_V.png" alt="M1_max_plus Eigenvector Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus Eigenvector</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_katz.png" alt="M1_max_plus Katz Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus Katz</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_hitsX.png" alt="M1_max_plus Hits_x Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus HITS Authority</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_hitsY.png" alt="M1_max_plus Hits_y Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus HITS Hub</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_t.png" alt="M1_max_plus Eigentrust Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus EigenTrust</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M1_max_plus/M1_max_plus_tt.png" alt="M1_max_plus Trust_transitivity Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M1_max_plus Trust Transitivity</p>
+</div>
 </div>
 
 <img src="robust_calibrated/plots_kde/M1_max_plus_centrality_kde.png" alt="M1_max_plus Centrality Distributions" style="width: 100%; height: auto;">
 <p style="font-size: 0.9em; text-align: center;"><strong>(C) M1_max_plus:</strong> Complex multi-layer interactions model exhibits rich continuous variation patterns across centrality distributions.</p>
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_bt.png" alt="M2aM1aS1a_max_plus Betweenness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_c.png" alt="M2aM1aS1a_max_plus Closeness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_hitsX.png" alt="M2aM1aS1a_max_plus Hits_x Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_hitsY.png" alt="M2aM1aS1a_max_plus Hits_y Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_katz.png" alt="M2aM1aS1a_max_plus Katz Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_pr.png" alt="M2aM1aS1a_max_plus PageRank Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_t.png" alt="M2aM1aS1a_max_plus Eigentrust Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_tt.png" alt="M2aM1aS1a_max_plus Trust_transitivity Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_V.png" alt="M2aM1aS1a_max_plus Eigenvector Centrality" style="width: 32%; height: auto;">
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_pr.png" alt="M2aM1aS1a_max_plus PageRank Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus PageRank</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_bt.png" alt="M2aM1aS1a_max_plus Betweenness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus Betweenness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_c.png" alt="M2aM1aS1a_max_plus Closeness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus Closeness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_V.png" alt="M2aM1aS1a_max_plus Eigenvector Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus Eigenvector</p>
+</div>
+
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_katz.png" alt="M2aM1aS1a_max_plus Katz Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus Katz</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_hitsX.png" alt="M2aM1aS1a_max_plus Hits_x Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus HITS Authority</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_hitsY.png" alt="M2aM1aS1a_max_plus Hits_y Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus HITS Hub</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_t.png" alt="M2aM1aS1a_max_plus Eigentrust Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus EigenTrust</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2aM1aS1a_max_plus/M2aM1aS1a_max_plus_tt.png" alt="M2aM1aS1a_max_plus Trust_transitivity Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2aM1aS1a_max_plus Trust Transitivity</p>
+</div>
 </div>
 
 <img src="robust_calibrated/plots_kde/M2aM1aS1a_max_plus_centrality_kde.png" alt="M2aM1aS1a_max_plus Centrality Distributions" style="width: 100%; height: auto;">
 <p style="font-size: 0.9em; text-align: center;"><strong>(D) M2aM1aS1а_max_plus:</strong> Layer 4 intratelencephalic pathways model shows comprehensive centrality coverage with detailed distribution patterns.</p>
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_bt.png" alt="M2M1S1_max_plus Betweenness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_c.png" alt="M2M1S1_max_plus Closeness Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_hitsX.png" alt="M2M1S1_max_plus Hits_x Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_hitsY.png" alt="M2M1S1_max_plus Hits_y Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_katz.png" alt="M2M1S1_max_plus Katz Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_pr.png" alt="M2M1S1_max_plus PageRank Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_t.png" alt="M2M1S1_max_plus Eigentrust Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_tt.png" alt="M2M1S1_max_plus Trust_transitivity Centrality" style="width: 32%; height: auto;">
-<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_V.png" alt="M2M1S1_max_plus Eigenvector Centrality" style="width: 32%; height: auto;">
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_pr.png" alt="M2M1S1_max_plus PageRank Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus PageRank</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_bt.png" alt="M2M1S1_max_plus Betweenness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus Betweenness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_c.png" alt="M2M1S1_max_plus Closeness Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus Closeness</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_V.png" alt="M2M1S1_max_plus Eigenvector Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus Eigenvector</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_katz.png" alt="M2M1S1_max_plus Katz Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus Katz</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_hitsX.png" alt="M2M1S1_max_plus Hits_x Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus HITS Authority</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_hitsY.png" alt="M2M1S1_max_plus Hits_y Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus HITS Hub</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_t.png" alt="M2M1S1_max_plus Eigentrust Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus Eigentrust</p>
+</div>
+<div style="flex: 0 0 32%; text-align: center;">
+<img src="centrality/M2M1S1_max_plus/M2M1S1_max_plus_tt.png" alt="M2M1S1_max_plus Trust_transitivity Centrality" style="width: 100%; height: auto;">
+<p style="font-size: 0.85em; margin-top: 5px;">M2M1S1_max_plus Trust Transitivity</p>
+</div>
 </div>
 
 <img src="robust_calibrated/plots_kde/M2M1S1_max_plus_centrality_kde.png" alt="M2M1S1_max_plus Centrality Distributions" style="width: 100%; height: auto;">
 <p style="font-size: 0.9em; text-align: center;"><strong>(E) M2M1S1_max_plus:</strong> Direct thalamocortical to corticothalamic connectivity model exhibits comprehensive centrality coverage with detailed distribution patterns.</p>
 </div>
+
+### Comparative Neuronal Circuit Dynamics Analysis
 
 **Figure 6**: Comparative Analysis of Neuronal Circuit Dynamics Across Models
 
@@ -423,6 +510,31 @@ This figure presents comprehensive dynamic visualization results comparing basic
 <p style="font-size: 0.9em;">Triple (adv): gt_dynamic_adv, gt_state_adv, gt_state_dynamic_adv</p>
 </div>
 
+
+## Methods
+### Computational Workflow
+
+Our analysis pipeline follows four sequential stages:
+
+**Stage 1: Network Construction**  
+Convert NeuroML format neuronal circuit files to graph-tool compatible networks with structural edge weighting (uniform random weights 0.1-1.0) to enhance centrality measure variation while preserving topology. For synthetic network generation and comparative analysis, utilize the graph-tool `price_network` function to create scale-free directed networks based on preferential attachment principles.
+
+
+**Stage 2: Graph-Theoretical Analysis**  
+Compute nine complementary centrality measures (Betweenness, Closeness, Eigenvector, PageRank, Katz, HITS Authority/Hub, EigenTrust, Trust Transitivity) for each weighted network model.
+
+**Stage 3: Visualization Generation**  
+Create individual centrality visualizations using SFDP (Spring Force-Directed Placement) layout algorithm, followed by kernel density estimation plots for comprehensive distribution analysis across five circuit models (TC2PT, max_CTC_plus, M1_max_plus, M2aM1aS1a_max_plus, M2M1S1_max_plus).
+
+**Stage 4: Dynamic Community Analysis**  
+Generate animated visualizations demonstrating stochastic block model inference for community structure evolution across multiple circuit architectures.
+
+The workflow operates within a managed environment ensuring cross-platform reproducibility, with all visualizations generated using established scientific Python libraries.
+
+### Repository Structure and Configuration
+
+The complete implementation is available at https://github.com/trernghwhuare/metrics-analysis-project with the following key components:
+
 ### Neurolibre Compliance Verification
 
 The repository meets all Neurolibre publication requirements:
@@ -448,7 +560,7 @@ Our approach offers several significant advantages over traditional neuronal cir
 
 4. **Academic Standards Compliance**: Integration of CITATION.cff supports proper scholarly attribution and enables automatic citation generation through platforms like Zenodo.
 
-5. **Reviewer-Friendly**: MyBinder enables zero-installation peer review, allowing reviewers to immediately execute the computational workflow and interact with visualizations without local environment setup.
+5. **Reviewer-Friendly**: The pixi-managed environment ensures reproducible computational workflows that can be easily validated by reviewers through local execution, with comprehensive documentation enabling clear understanding of the analysis pipeline without complex installation requirements.
 
 6. **Publication-Ready Output**: Built-in matplotlib and seaborn integration ensures visualizations meet journal quality standards with minimal post-processing.
 
@@ -516,34 +628,34 @@ The complete implementation is available at https://github.com/trernghwhuare/met
 
 #### Core Configuration Files
 
-- **[pixi.toml](file:///home/leo520/my/metrics-analysis-project/pixi.toml)**: Workspace configuration specifying dependencies, platforms, and tasks
-- **[pyproject.toml](file:///home/leo520/my/metrics-analysis-project/pyproject.toml)**: Package metadata and build configuration  
-- **[CITATION.cff](file:///home/leo520/my/metrics-analysis-project/CITATION.cff)**: Academic citation metadata
-- **[package.json](file:///home/leo520/my/metrics-analysis-project/package.json)**: Local MyST npm installation
+- **[pixi.toml](./metrics-analysis-project/pixi.toml)**: Workspace configuration specifying dependencies, platforms, and tasks
+- **[pyproject.toml](./metrics-analysis-project/pyproject.toml)**: Package metadata and build configuration  
+- **[CITATION.cff](./metrics-analysis-project/CITATION.cff)**: Academic citation metadata
+- **[package.json](./metrics-analysis-project/package.json)**: Local MyST npm installation
 
 #### Documentation Infrastructure
 
-- **[_toc.yml](file:///home/leo520/my/metrics-analysis-project/_toc.yml)**: Table of contents for Jupyter Book
-- **[_config.yml](file:///home/leo520/my/metrics-analysis-project/_config.yml)**: Jupyter Book configuration
-- **[protocol_document.md](file:///home/leo520/my/metrics-analysis-project/protocol_document.md)**: Neuroscience methodology documentation
+- **[_toc.yml](./metrics-analysis-project/_toc.yml)**: Table of contents for Jupyter Book
+- **[_config.yml](./metrics-analysis-project/_config.yml)**: Jupyter Book configuration
+- **[protocol_document.md](./metrics-analysis-project/protocol_document.md)**: Neuroscience methodology documentation
 
 #### Visualization Components
 
-- **[Network_Metrics_Analysis.ipynb](file:///home/leo520/my/metrics-analysis-project/Network_Metrics_Analysis.ipynb)**: Interactive notebook demonstrating neuronal circuit visualization capabilities
+- **[Network_Metrics_Analysis.ipynb](./metrics-analysis-project/Network_Metrics_Analysis.ipynb)**: Interactive notebook demonstrating neuronal circuit visualization capabilities
 - **network_metrics_package/plotting/**: Modular plotting functions for strip plots, box plots, heatmaps, and clustermaps
 - **results/**: Directory for storing generated visualizations (images, GIFs, and interactive outputs)
 
-#### MyBinder Configuration
+#### Environment Configuration
 
-- **[binder/environment.yml](file:///home/leo520/my/metrics-analysis-project/binder/environment.yml)**: Conda environment specification
-- **[binder/postBuild](file:///home/leo520/my/metrics-analysis-project/binder/postBuild)**: Automated package installation and documentation build
-- **[binder/runtime.txt](file:///home/leo520/my/metrics-analysis-project/binder/runtime.txt)**: Python version specification
+- **[pixi.toml](./metrics-analysis-project/pixi.toml)**: Primary environment specification with platform constraints (linux-64, osx-64) and dependency management
+- **[binder/environment.yml](./metrics-analysis-project/binder/environment.yml)**: Alternative conda environment specification (note: graph-tool compatibility may be limited in standard binder environments)
+- **[requirements.txt](./metrics-analysis-project/requirements.txt)**: Python package dependencies for lightweight analysis components
 
 ### Workflow Execution
 
 #### Local Development Commands
 
-```bash
+```
 # Environment setup
 git clone https://github.com/trernghwhuare/metrics-analysis-project.git
 cd metrics-analysis-project
@@ -583,7 +695,7 @@ pixi run analyze
 
 #### Cloud Deployment
 
-The MyBinder badge in [README.md](file:///home/leo520/my/metrics-analysis-project/README.md) provides immediate access to the complete computational environment without local installation requirements, enabling interactive exploration of neuronal circuit visualizations.
+The project includes MyBinder configuration files for cloud deployment attempts, though users should note that graph-tool's complex C++ dependencies may limit functionality in standard binder environments. For full functionality, local execution using the pixi-managed environment is recommended.
 
 ### Technical Specifications
 
@@ -639,7 +751,7 @@ The MyBinder badge in [README.md](file:///home/leo520/my/metrics-analysis-projec
 
 ## Acknowledgments
 
-This work was supported by the principles of open science and reproducible research. We acknowledge the developers of graph-tool, pixi, MyST, Jupyter Book, and MyBinder for their contributions to scientific computing infrastructure.
+This work was supported by the principles of open science and reproducible research. We acknowledge the developers of graph-tool, pixi, MyST, and Jupyter Book for their contributions to scientific computing infrastructure.
 
 ## Author Contributions
 
@@ -653,6 +765,3 @@ The authors declare no competing interests.
 
 All code and configuration files are available at https://github.com/trernghwhuare/metrics-analysis-project under the MIT License. Example neuronal circuit datasets and generated visualizations will be made available in the `results/` directory upon publication.
 
-## Keywords
-
-neuronal circuits, network visualization, computational neuroscience, complex networks, graph theory, graph-tool, pixi, MyST, Jupyter Book, MyBinder, Neurolibre, open science, animated visualizations
