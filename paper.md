@@ -154,7 +154,7 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 </div>
 </div>
 
-**Figure 2**: Individual centrality measure visualizations for the TC2PT neuronal circuit model. This figure displays nine different graph-theoretical centrality algorithms applied to the same network, revealing complementary perspectives on neuronal importance and functional roles: (A)  **Betweenness centrality** quantifying control over information flow; (B) **Closeness centrality** assessing proximity to all other neurons; (C) **Eigenvector centrality** identifying neurons connected to other important neurons; (D) **PageRank centrality** modeling random walk importance; (E) **Katz centrality** capturing influence through network paths; (F) **HITS Authority** measuring received importance; (G) **HITS Hub** quantifying distributed importance; (H) **EigenTrust centrality** computing global trust from local relationships; (I) **Centrality Distribution** - Spread of centrality values across the network. 
+**Figure 2**: Individual centrality measure visualizations for the TC2PT neuronal circuit model. This figure displays nine different graph-theoretical centrality algorithms applied to the same network, revealing complementary perspectives on neuronal importance and functional roles: (A)  **Betweenness centrality** Calculate the average number of shortest paths from one vertex to another for each vertex and edge; (B) **Closeness centrality** Calculate the possibly or weighted distance from one vertex to another; (C) **Eigenvector centrality** Calculate the eigenvector of the (weighted) adjacency matrix with the largest eigenvalue of each vertex; (D) **PageRank centrality** Calculate the in-neighbors vertex of sum weight of out-degree edges for each vertex; (E) **Katz centrality** Calculate the the (weighted) adjacency matrix in the nonhomogeneous linear system for each vertex; (F) **HITS Authority** Calculate the authority centralities of each vertex; (G) **HITS Hub** Calculate the (weighted) adjacency matrix with the largest eigenvalue of the cocitation matrix of each vertex; (H) **EigenTrust centrality** Calculate the limite with the normalized trust values in matrix for each vertex ; (I) **Trust_transitivity centrality** Calculate paths with maximum weight, using Dijkstra’s algorithm, to all in-neighbors of a given target between chosen (or all) vertices in the graph;(J)**Centrality Distribution** - Spread of centrality values across the network. 
 
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;">
 <div style="flex: 0 0 30%; text-align: center;">
@@ -186,12 +186,15 @@ Visualize distinct connectivity patterns and hierarchical organization across di
 <p style="font-size: 0.85em; margin-top: 5px;"><strong>(G) HITS Hub</strong> - Distributed importance</p>
 </div>
 <div style="flex: 0 0 30%; text-align: center;">
+<img src="metrics/TC2PT/TC2PT_eigentrust.png" alt="TC2PT EigenTrust Centrality" style="width: 100%; height: auto;"/>
+<p style="font-size: 0.85em; margin-top: 5px;"><strong>(H) EigenTrust</strong> - Trusted influence</p>
+<div style="flex: 0 0 30%; text-align: center;">
 <img src="metrics/TC2PT/TC2PT_trust_transitivity.png" alt="TC2PT Trust_transitivity Centrality" style="width: 100%; height: auto;"/>
-<p style="font-size: 0.85em; margin-top: 5px;"><strong>(H) trust_transitivity</strong> - Global trust computation</p>
+<p style="font-size: 0.85em; margin-top: 5px;"><strong>(I) trust_transitivity</strong> - Global trust computation</p>
 </div>
 <div style="flex: 0 0 30%; text-align: center;">
 <img src="metrics/TC2PT/TC2PT_facetgrid.png" alt="TC2PT Centrality distributions" style="width: 100%; height: auto;"/>
-<p style="font-size: 0.85em; margin-top: 5px;"><strong>(I) Facet Grid</strong> - Distribution of centrality measures</p>
+<p style="font-size: 0.85em; margin-top: 5px;"><strong>(J) Facet Grid</strong> - Distribution of centrality measures</p>
 </div>
 
 The animation shows how the algorithm progressively refines community assignments to optimize the likelihood of the observed connectivity pattern.
