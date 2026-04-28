@@ -2,11 +2,11 @@
 
 ## Abstract
 
-**Background**: Visualization of neuronal circuit models remains a critical challenge in computational neuroscience, requiring specialized tools for representing complex network structures, dynamic properties, and multi-model comparative analysis.
-**Objective**: We present a reproducible workflow for visualizing large-scale neuronal circuit models from multiple structural and functional perspectives, enabling comprehensive exploration of network organization across different analytical dimensions.
-**Methods**: The workflow combines graph-theoretical centrality analysis across five distinct circuit architectures with publication-quality visualization tools (matplotlib, seaborn, graph-tool.draw) to create static images of individual centrality measures, kernel density estimation plots of centrality distributions, and animated GIFs demonstrating community structure evolution via stochastic block model inference.
-**Results**: Successful implementation demonstrates complete reproducibility across platforms (Linux, macOS) with validated graph-tool version 2.98. The framework generates comprehensive univariate centrality distribution analyses across multiple weighted models (TC2PT, max_CTC_plus, M1_max_plus, M2aM1aS1a_max_plus, M2M1S1_max_plus), producing individual centrality visualizations and kernel density estimation plots for each centrality metric, along with animated visualizations of dynamic community detection processes.
-**Significance**: This protocol provides a template for reproducible multi-model comparison of neuronal circuit architectures meeting open science standards and Neurolibre publication requirements, enabling detailed discrimination of network roles through structural weighting and continuous variation patterns across centrality metrics.
+
+**Objective**: To present a reproducible workflow for visualizing large-scale neuronal circuit models from multiple structural and functional perspectives, enabling comprehensive exploration of network organization across different analytical dimensions.
+**Methods**: Implement graph theory to visualize representative simulation networks via nonparametric statistically inferring modular network structure, reconstructing into nested stochastic block model to find hierarchical partitions and characterize the posterior distribution using centrality-related algorithms. Perform animations for visualizing spatial segregation of the network along with the time evolution via rewiring strategies and SIRS model.
+**Results**: The framework generates comprehensive univariate centrality distribution analyses and compares animation algorithms trigger variates across multiple weighted models, including partial CTC loop (*i.e.*, TC2PT), single-regional CTC loop (*i.e.*, max_CTC_plus) and multiple-regional CTC loops (*i.e.*, M1_max_plus, M2aM1aS1a_max_plus, M2M1S1_max_plus). And the in-neighbors rewiring combining SIRS state altering animation algorithms causes the most significant variation in the conditions of edges connected catagorized most detaily (*p* <0.01).
+**Conclusion**: This protocol provides a template for reproducible multi-dimentional comparison of neuronal circuit architectures enabling detailed discrimination of network roles through structural weighting and continuous variation patterns across centrality metrics.
 
 ## Keywords
 neuronal circuits, computational neuroscience, graph theory, SFDP, price_network, stochastic block model (SBM)
@@ -15,9 +15,13 @@ neuronal circuits, computational neuroscience, graph theory, SFDP, price_network
 
 Computational neuroscience increasingly relies on complex network analysis to understand brain connectivity and neural circuit organization. The ability to visualize neuronal circuit models from multiple analytical perspectives is essential for interpreting network properties such as centrality, clustering, and community structure in neural systems. However, effective visualization of neuronal circuits presents unique challenges including high-dimensional connectivity, multi-scale organization, and the need for specialized computational tools.
 
-Traditional approaches often fail to capture the comprehensive nature of neuronal circuit analysis, providing limited views that cannot reveal the full spectrum of network organization. Here we present a systematic framework that enables researchers to view large-scale neuronal networks from different structural and functional angles, providing complementary insights into network architecture and functional roles.
+Traditional approaches to community detection in networks often rely on descriptive methods like modularity optimization [3], which can produce misleading results when applied without proper statistical validation [2]. Recent advances in Bayesian stochastic blockmodeling provide a principled framework for inferential community detection that addresses fundamental limitations of purely descriptive approaches [1, 2]. The stochastic block model (SBM), first introduced by Holland et al. [4], has evolved into sophisticated nonparametric frameworks that enable robust inference of mesoscale structure in complex networks [5, 6].
 
-Our approach integrates graph-theoretical analysis with advanced visualization techniques to create a multi-dimensional perspective on neuronal circuit construction. By applying diverse centrality measures, hierarchical community detection, and dynamic modeling across multiple circuit architectures, we demonstrate how different analytical lenses reveal distinct aspects of the same underlying network structure.
+Modern SBM variants accommodate weighted networks [14], hierarchical organization [8], overlapping groups [11], and directed connectivity patterns [20], making them particularly suitable for analyzing neuronal circuit architectures. The development of efficient inference algorithms, including merge-split Markov chain Monte Carlo methods [10] and greedy heuristics [9], enables scalable analysis of large-scale networks while maintaining statistical rigor. Furthermore, nonparametric approaches eliminate the need for a priori specification of model complexity, allowing data-driven determination of optimal community structure [5, 7, 8].
+
+Hierarchical block structures provide a natural framework for understanding multi-scale organization in neuronal circuits, where functional modules exist at multiple levels of granularity [8, 17]. This hierarchical perspective aligns with the biological reality of neural systems, which exhibit organization from individual neurons to microcircuits, brain regions, and whole-brain networks. The integration of weighted stochastic block models [14] with structural edge weighting enables enhanced discrimination of network roles while preserving topological constraints.
+
+Here we present a systematic framework that leverages these advanced community detection methodologies to enable researchers to view large-scale neuronal networks from different structural and functional angles, providing complementary insights into network architecture and functional roles. Our approach integrates graph-theoretical analysis with Bayesian stochastic blockmodeling to create a multi-dimensional perspective on neuronal circuit construction. By applying diverse centrality measures, hierarchical community detection, and dynamic modeling across multiple circuit architectures, we demonstrate how different analytical lenses reveal distinct aspects of the same underlying network structure.
 
 ## Results
 
@@ -34,7 +38,6 @@ Our approach integrates graph-theoretical analysis with advanced visualization t
 <div style="flex: 0 0 48%; text-align: center;">
 <img src="graph_draw/TC2CT/TC2CT_main.png" alt="TC2CT Main Layout" style="width: 100%; height: auto;"/>
 <p style="font-size: 0.9em; margin-top: 5px;"><strong>(A-2) TC2CT Main Layout</strong> - population nodes layout from Direct thalamocortical to corticothalamic connectivity</p>
-</div>
 </div>
 
 <div style="flex: 0 0 48%; text-align: center;">
@@ -512,6 +515,7 @@ This figure presents comprehensive dynamic visualization results comparing basic
 
 
 ## Methods
+
 ### Computational Workflow
 
 Our analysis pipeline follows four sequential stages:
@@ -530,97 +534,6 @@ Create individual centrality visualizations using SFDP (Spring Force-Directed Pl
 Generate animated visualizations demonstrating stochastic block model inference for community structure evolution across multiple circuit architectures.
 
 The workflow operates within a managed environment ensuring cross-platform reproducibility, with all visualizations generated using established scientific Python libraries.
-
-### Repository Structure and Configuration
-
-The complete implementation is available at https://github.com/trernghwhuare/metrics-analysis-project with the following key components:
-
-### Neurolibre Compliance Verification
-
-The repository meets all Neurolibre publication requirements:
-- ✅ Complete Binder configuration (environment.yml, postBuild, runtime.txt)
-- ✅ Academic citation support (CITATION.cff with proper metadata)
-- ✅ Neuroscience context documentation (protocol_document.md)
-- ✅ Professional documentation structure (_toc.yml, _config.yml)
-- ️✅ Cross-platform environment specification (linux-64, osx-64)
-- ✅ Reproducible research practices (Jupyter Book integration)
-- ✅ Visualization-focused methodology with neuronal circuit applications
-
-## Discussion
-
-### Advantages of This Visualization Protocol
-
-Our approach offers several significant advantages over traditional neuronal circuit visualization workflows:
-
-1. **Enhanced Reproducibility**: Complete environment specification eliminates "works on my machine" issues through explicit dependency pinning and platform constraints.
-
-2. **Comprehensive Visualization Suite**: Integrated static and dynamic visualization capabilities provide multiple perspectives on neuronal circuit organization, from topological structure to statistical properties.
-
-3. **Reduced Barrier to Entry**: Single-command installation (`pixi install`) replaces complex dependency management procedures that previously required manual compilation of graph-tool.
-
-4. **Academic Standards Compliance**: Integration of CITATION.cff supports proper scholarly attribution and enables automatic citation generation through platforms like Zenodo.
-
-5. **Reviewer-Friendly**: The pixi-managed environment ensures reproducible computational workflows that can be easily validated by reviewers through local execution, with comprehensive documentation enabling clear understanding of the analysis pipeline without complex installation requirements.
-
-6. **Publication-Ready Output**: Built-in matplotlib and seaborn integration ensures visualizations meet journal quality standards with minimal post-processing.
-
-### Network Centrality Measures
-
-Our framework implements eight fundamental network centrality measures to characterize neuronal circuit organization:
-
-**PageRank Centrality** [13] quantifies the importance of nodes based on the structure formulate incoming links, using a damping factor to model random navigation behavior.
-
-**Betweenness Centrality** [15] measures the extent to which a node lies on shortest paths between other nodes, identifying critical bridges in information flow.
-
-**Closeness Centrality** [16] captures how close a node is to all other nodes in the network, reflecting efficiency of information propagation.
-
-**Eigenvector Centrality** [18, 14] assigns relative scores to nodes based on the principle that connections to high-scoring nodes contribute more than connections to low-scoring nodes.
-
-**Katz Centrality** [14] extends eigenvector centrality by incorporating both direct and indirect connections with exponential decay based on path length.
-
-**HITS (Hyperlink-Induced Topic Search) Centrality** [14] computes separate hub and authority scores, where good hubs point to many good authorities and good authorities are pointed to by many good hubs.
-
-**EigenTrust Centrality** [20] models trust transitivity in networks, where trust in a node is determined by the trustworthiness of nodes that trust it.
-
-**Trust Transitivity Centrality** [21] extends trust modeling by considering weighted paths and structural constraints in trust propagation.
-
-These measures provide complementary perspectives on network structure, enabling comprehensive analysis of neuronal circuit organization and function.
-
-### Limitations
-
-Despite its advantages, our protocol has several limitations:
-
-1. **Platform Constraints**: Windows incompatibility due to graph-tool limitations restricts accessibility for some users. This is an inherent limitation of the graph-tool library rather than our workflow design.
-
-2. **Additional Dependencies**: Node.js ≥20 requirement for documentation adds complexity, though this is offset by the enhanced documentation capabilities.
-
-3. **Internet Dependency**: Initial setup requires network connectivity for package resolution, though subsequent usage can be offline.
-
-4. **Memory Requirements**: Large neuronal circuits may require substantial memory for visualization, particularly for animated GIF generation.
-
-### Applications Beyond Standard Neuroscience
-
-While designed specifically for neuronal circuit visualization, this protocol applies broadly to any domain requiring complex network visualization:
-- Social network analysis with community detection
-- Transportation network visualization and optimization  
-- Biological pathway analysis and gene regulatory networks
-- Infrastructure network resilience assessment and visualization
-
-### Future Directions
-
-Several enhancements could further improve this visualization protocol:
-
-1. **3D Visualization Integration**: Incorporating tools like Plotly or Mayavi for three-dimensional neuronal circuit visualization.
-
-2. **Real-time Streaming**: Adding capability to visualize live neuronal activity data streams alongside structural connectivity.
-
-3. **Virtual Reality Support**: Enabling immersive exploration of large-scale neuronal circuits in VR environments.
-
-4. **Automated Figure Generation**: Creating templates for common neuroscience journal figure formats with automatic layout optimization.
-
-5. **Cloud Integration**: Direct deployment to neurolibre.com and other platforms could streamline the publication process.
-
-## Methods
 
 ### Repository Structure and Configuration
 
@@ -704,6 +617,87 @@ The project includes MyBinder configuration files for cloud deployment attempts,
 **Node.js Version**: ≥20 LTS  
 **Memory Requirements**: 8GB+ RAM recommended for graph-tool operations and GIF generation  
 **Disk Space**: 2GB minimum for environment installation, additional space for result images/GIFs
+
+## Discussion
+
+### Advantages of This Visualization Protocol
+
+Our approach offers several significant advantages over traditional neuronal circuit visualization workflows:
+
+1. **Enhanced Reproducibility**: Complete environment specification eliminates "works on my machine" issues through explicit dependency pinning and platform constraints.
+
+2. **Comprehensive Visualization Suite**: Integrated static and dynamic visualization capabilities provide multiple perspectives on neuronal circuit organization, from topological structure to statistical properties.
+
+3. **Reduced Barrier to Entry**: Single-command installation (`pixi install`) replaces complex dependency management procedures that previously required manual compilation of graph-tool.
+
+4. **Academic Standards Compliance**: Integration of CITATION.cff supports proper scholarly attribution and enables automatic citation generation through platforms like Zenodo.
+
+5. **Reviewer-Friendly**: The pixi-managed environment ensures reproducible computational workflows that can be easily validated by reviewers through local execution, with comprehensive documentation enabling clear understanding of the analysis pipeline without complex installation requirements.
+
+6. **Publication-Ready Output**: Built-in matplotlib and seaborn integration ensures visualizations meet journal quality standards with minimal post-processing.
+
+### Network Centrality Measures
+
+Our framework implements eight fundamental network centrality measures to characterize neuronal circuit organization:
+
+**PageRank Centrality** [13] quantifies the importance of nodes based on the structure formulate incoming links, using a damping factor to model random navigation behavior.
+
+**Betweenness Centrality** [15] measures the extent to which a node lies on shortest paths between other nodes, identifying critical bridges in information flow.
+
+**Closeness Centrality** [16] captures how close a node is to all other nodes in the network, reflecting efficiency of information propagation.
+
+**Eigenvector Centrality** [18, 14] assigns relative scores to nodes based on the principle that connections to high-scoring nodes contribute more than connections to low-scoring nodes.
+
+**Katz Centrality** [14] extends eigenvector centrality by incorporating both direct and indirect connections with exponential decay based on path length.
+
+**HITS (Hyperlink-Induced Topic Search) Centrality** [14] computes separate hub and authority scores, where good hubs point to many good authorities and good authorities are pointed to by many good hubs.
+
+**EigenTrust Centrality** [20] models trust transitivity in networks, where trust in a node is determined by the trustworthiness of nodes that trust it.
+
+**Trust Transitivity Centrality** [21] extends trust modeling by considering weighted paths and structural constraints in trust propagation.
+
+These measures provide complementary perspectives on network structure, enabling comprehensive analysis of neuronal circuit organization and function.
+
+### Limitations
+
+Despite its advantages, our protocol has several limitations:
+
+1. **Platform Constraints**: Windows incompatibility due to graph-tool limitations restricts accessibility for some users. This is an inherent limitation of the graph-tool library rather than our workflow design.
+
+2. **Additional Dependencies**: Node.js ≥20 requirement for documentation adds complexity, though this is offset by the enhanced documentation capabilities.
+
+3. **Internet Dependency**: Initial setup requires network connectivity for package resolution, though subsequent usage can be offline.
+
+4. **Memory Requirements**: Large neuronal circuits may require substantial memory for visualization, particularly for animated GIF generation.
+
+### Applications Beyond Standard Neuroscience
+
+While designed specifically for neuronal circuit visualization, this protocol applies broadly to any domain requiring complex network visualization:
+- Social network analysis with community detection
+- Transportation network visualization and optimization  
+- Biological pathway analysis and gene regulatory networks
+- Infrastructure network resilience assessment and visualization
+
+### Statistical Significance of Dynamic Network Comparisons
+In **triple non-advanced comparison** (gt_dynamic, gt_state, gt_state_dynamic), there is statistically significant differences (p < 0.01) in ANOVA statisctic analysis, which demonstrating that these three distinct simulation approaches,*i.e*, in-neighbored edge rewiring dynamics, SIRS state propagation, both SIRI state altering and rewiring interactions, generate measurably different network behaviors within basic implementation paradigms.
+A critical finding from our comparative analysis is the statistical significance observed in key dynamic network comparisons. Specifically, the **combined state-dynamic models** (comparing basic *vs.* advanced implementations) demonstrate exceptionally strong statistical differences with **p-values less than 0.01**, as in the pair_combined_artistic.png. This indicates that the enhanced algorithmic implementations produce fundamentally different network evolution patterns compared to basic approaches, with minimal probability that these differences arise by chance.
+
+These significant results (p < 0.01) validate our multi-dimensional analytical approach and confirm that different simulation paradigms capture genuinely distinct aspects of neuronal network dynamics. The statistical robustness of these findings strengthens the biological interpretability of our visualizations and provides quantitative evidence supporting the use of comprehensive dynamic modeling frameworks for understanding complex neuronal circuit behavior.
+
+### Future Directions
+
+Several enhancements could further improve this visualization protocol:
+
+1. **3D Visualization Integration**: Incorporating tools like Plotly or Mayavi for three-dimensional neuronal circuit visualization.
+
+2. **Real-time Streaming**: Adding capability to visualize live neuronal activity data streams alongside structural connectivity.
+
+3. **Virtual Reality Support**: Enabling immersive exploration of large-scale neuronal circuits in VR environments.
+
+4. **Automated Figure Generation**: Creating templates for common neuroscience journal figure formats with automatic layout optimization.
+
+5. **Cloud Integration**: Direct deployment to neurolibre.com and other platforms could streamline the publication process.
+
 
 ## References
 
